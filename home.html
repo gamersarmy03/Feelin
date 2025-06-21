@@ -85,30 +85,11 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 2; /* Ensure spinner is above glow */
         }
-        .loader-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 10px; /* Small initial size */
-            height: 10px;
-            border-radius: 50%;
-            background-color: rgba(147, 51, 234, 0.7); /* Purple glow */
-            transform: translate(-50%, -50%);
-            animation: glow-expand 2s infinite ease-out;
-            z-index: 1; /* Below spinner */
-        }
-
         @keyframes pulse-light {
             0% { background-color: #f0f0f0; }
             50% { background-color: #e5e5e5; }
             100% { background-color: #f0f0f0; }
-        }
-        @keyframes glow-expand {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0.7; }
-            50% { opacity: 0.4; }
-            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
         }
 
         /* Generated image fade-in */
@@ -198,9 +179,6 @@
         body.dark-mode .image-loader .inner-loader {
             border-top: 6px solid #d1b3ff; /* Lighter purple for loader in dark mode */
             border-color: rgba(209, 179, 255, 0.2);
-        }
-        body.dark-mode .loader-glow {
-            background-color: rgba(209, 179, 255, 0.7); /* Lighter purple glow for dark mode */
         }
         @keyframes pulse-dark {
             0% { background-color: #1a1a1a; }
@@ -418,13 +396,8 @@
 
             const innerLoaderDiv = document.createElement('div');
             innerLoaderDiv.className = 'inner-loader';
-            
-            const loaderGlowDiv = document.createElement('div');
-            loaderGlowDiv.className = 'loader-glow';
 
-
-            imageLoaderDiv.appendChild(loaderGlowDiv); // Add glow first (z-index 1)
-            imageLoaderDiv.appendChild(innerLoaderDiv); // Add spinner second (z-index 2)
+            imageLoaderDiv.appendChild(innerLoaderDiv);
             cardDiv.appendChild(imageLoaderDiv);
             imageGallery.prepend(cardDiv); // Add to the beginning
             return cardDiv; // Return the card div to be updated later
@@ -549,11 +522,10 @@
                             imageContainer.appendChild(imgElement);
                             cardToUpdate.appendChild(imageContainer);
 
-                            // Removed: promptParagraph, as requested
-                            // const promptParagraph = document.createElement('p');
-                            // promptParagraph.className = 'text-gray-800 text-sm';
-                            // promptParagraph.textContent = finalPrompt;
-                            // cardToUpdate.appendChild(promptParagraph);
+                            const promptParagraph = document.createElement('p');
+                            promptParagraph.className = 'text-gray-800 text-sm';
+                            promptParagraph.textContent = finalPrompt;
+                            cardToUpdate.appendChild(promptParagraph);
 
                         } else if (loaderCards[index]) {
                             // If a prediction is missing or invalid, update the loader card to show an error or placeholder
