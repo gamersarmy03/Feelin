@@ -373,7 +373,8 @@
                 }
             };
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+            // Removed `?key=${apiKey}` from the URL
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -437,7 +438,8 @@
             let chatHistory = [];
             chatHistory.push({ role: "user", parts: [{ text: `Elaborate and make more descriptive the following image generation prompt, focusing on vivid visual details, mood, and potential composition, without adding a specific art style or aspect ratio: "${currentPrompt}". Ensure the enhanced prompt is at least 50 words long.` }] });
             const payload = { contents: chatHistory };
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Removed `?key=${apiKey}` from the URL
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -488,7 +490,8 @@
                     }
                 }
             };
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Removed `?key=${apiKey}` from the URL
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
 
             try {
                 const response = await fetch(apiUrl, {
