@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FeelImage - AI Image Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Light Theme Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff; /* White background */
+            color: #333333; /* Dark text color for readability */
+            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for dark mode */
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .gradient-button {
+            background-image: linear-gradient(to right, #9333ea, #ec4899); /* Purple to Pink gradient */
+            transition: all 0.3s ease;
+        }
+        .gradient-button:hover {
+            background-image: linear-gradient(to right, #ec4899, #9333ea); /* Reversed gradient on hover */
+            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); /* Purple shadow */
+        }
+        .card {
+            background-color: #fafafa; /* Slightly off-white for cards */
+            border: 1px solid #e5e5e5; /* Light grey border */
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #9333ea; /* Purple */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Style for selected aspect ratio button */
+        .aspect-ratio-button {
+            background-color: #f5f5f5; /* Light grey for unselected */
+            color: #666666; /* Darker text for unselected */
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s ease;
+        }
+        .aspect-ratio-button.selected {
+            background-color: #9333ea; /* Purple background for selected */
+            border-color: #9333ea;
+            color: white;
+            box-shadow: 0 2px 8px rgba(147, 51, 234, 0.5);
+        }
+        .aspect-ratio-button:hover:not(.selected) {
+            background-color: #e0e0e0; /* Lighter hover for unselected */
+        }
+
+        /* Aesthetic loader for image cards */
+        .image-loader {
+            width: 100%;
+            height: 0;
+            padding-top: 100%; /* Default aspect ratio, dynamically updated */
+            position: relative;
+            background: linear-gradient(135deg, #f0f0f0, #e0e0e0); /* Subtle gradient for light mode loader */
+            border-radius: 0.75rem; /* rounded-xl */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Ensure inner loader stays within bounds */
+            animation: pulse-light 2s infinite ease-in-out; /* Pulsing animation */
+        }
+        .image-loader .inner-loader {
+            border: 6px solid rgba(147, 51, 234, 0.2); /* Transparent purple */
+            border-top: 6px solid #9333ea; /* Purple */
+            border-radius: 50%;
+            width: 60px; /* Larger spinner */
+            height: 60px; /* Larger spinner */
+            animation: spin 1.5s linear infinite;
+            position: absolute; /* Center the loader within the padded container */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2; /* Ensure spinner is above glow */
+        }
+        .loader-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px; /* Small initial size */
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(147, 51, 234, 0.7); /* Purple glow */
+            transform: translate(-50%, -50%);
+            animation: glow-expand 2s infinite ease-out;
+            z-index: 1; /* Below spinner */
+        }
+
+        @keyframes pulse-light {
+            0% { background-color: #f0f0f0; }
+            50% { background-color: #e5e5e5; }
+            100% { background-color: #f0f0f0; }
+        }
+        @keyframes glow-expand {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0.7; }
+            50% { opacity: 0.4; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+
+        /* Generated image fade-in */
+        .image-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #000000; /* Black background */
+            color: #e0e0e0; /* Light text for dark mode */
+        }
+        body.dark-mode header {
+            background-color: #1a1a1a; /* Darker header */
+        }
+        body.dark-mode header h1 {
+            color: #d1b3ff; /* Lighter purple for dark mode title */
+        }
+        body.dark-mode header nav a {
+            color: #a0a0a0;
+        }
+        body.dark-mode header nav a:hover {
+            color: #d1b3ff;
+        }
+        body.dark-mode main section:first-of-type h2 {
+            color: #f0f0f0; /* Lighter heading text */
+        }
+        body.dark-mode main section:first-of-type p {
+            color: #c0c0c0; /* Lighter paragraph text */
+        }
+        body.dark-mode .card {
+            background-color: #1c1c1c; /* Darker card background */
+            border: 1px solid #333333; /* Darker border */
+        }
+        body.dark-mode input[type="text"] {
+            background-color: #2a2a2a; /* Darker input background */
+            color: #f0f0f0; /* Lighter input text */
+            /* Tailwind placeholder-gray-500 will handle this for dark mode */
+        }
+        body.dark-mode #enhancePromptButton {
+            background-color: #7b43a5; /* Darker purple for enhance button */
+            transition: all 0.3s ease;
+        }
+        body.dark-mode #enhancePromptButton:hover {
+            background-color: #9333ea;
+        }
+        body.dark-mode #enhancePromptButton .loader {
+            border-top-color: #d1b3ff; /* Lighter loader for dark mode */
+        }
+        body.dark-mode #styleSelect {
+            background-color: #2a2a2a;
+            color: #f0f0f0;
+            border-color: #333333;
+        }
+        body.dark-mode .aspect-ratio-button {
+            background-color: #2a2a2a; /* Darker background for unselected ratio buttons */
+            color: #c0c0c0; /* Lighter text */
+            border-color: #333333;
+        }
+        body.dark-mode .aspect-ratio-button.selected {
+            background-color: #9333ea; /* Keep primary purple for selected */
+            border-color: #9333ea;
+            color: white;
+            box-shadow: 0 2px 8px rgba(147, 51, 234, 0.5);
+        }
+        body.dark-mode .aspect-ratio-button:hover:not(.selected) {
+            background-color: #3a3a3a; /* Darker hover for unselected ratio buttons */
+        }
+        body.dark-mode #errorMessage {
+            color: #ff8080; /* Lighter red for errors in dark mode */
+        }
+        body.dark-mode h3 {
+            color: #f0f0f0; /* Lighter heading for creations */
+        }
+        body.dark-mode .card p {
+            color: #c0c0c0; /* Lighter text for image prompts */
+        }
+        body.dark-mode .image-loader {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a); /* Darker gradient for dark mode loader */
+            animation: pulse-dark 2s infinite ease-in-out; /* Pulsing animation */
+        }
+        body.dark-mode .image-loader .inner-loader {
+            border-top: 6px solid #d1b3ff; /* Lighter purple for loader in dark mode */
+            border-color: rgba(209, 179, 255, 0.2);
+        }
+        body.dark-mode .loader-glow {
+            background-color: rgba(209, 179, 255, 0.7); /* Lighter purple glow for dark mode */
+        }
+        @keyframes pulse-dark {
+            0% { background-color: #1a1a1a; }
+            50% { background-color: #2a2a2a; }
+            100% { background-color: #1a1a1a; }
+        }
+
+        body.dark-mode footer {
+            background-color: #1a1a1a; /* Darker footer */
+            color: #a0a0a0;
+        }
+        body.dark-mode #darkModeToggle {
+            background-color: #333333;
+            color: #ffffff;
+        }
+        body.dark-mode #darkModeToggle:hover {
+            background-color: #555555;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-100 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-purple-700">FeelImage</h1>
+            <nav class="flex items-center space-x-6">
+                <ul class="flex space-x-6">
+                    <li><a href="#" class="text-gray-600 hover:text-purple-500 transition-colors">Generate</a></li>
+                    <li><a href="#" class="text-gray-600 hover:text-purple-500 transition-colors">Explore</a></li>
+                    <li><a href="#" class="text-gray-600 hover:text-purple-500 transition-colors">Community</a></li>
+                </ul>
+                <button id="darkModeToggle" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors font-semibold">
+                    Dark Mode
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto p-6 md:p-8">
+        <section class="text-center mb-10">
+            <h2 class="text-5xl md:text-6xl font-extrabold text-gray-800 mb-4 leading-tight">
+                Transform your ideas into stunning images.
+            </h2>
+            <p class="text-lg md:text-xl text-gray-600">
+                Simply type what you envision, and let our AI bring it to life.
+            </p>
+        </section>
+
+        <!-- Image Generation Input and Controls -->
+        <section class="bg-white p-6 rounded-2xl shadow-xl mb-10 card">
+            <div class="flex flex-col gap-4">
+                <!-- Prompt Input -->
+                <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+                    <input
+                        type="text"
+                        id="promptInput"
+                        placeholder="Enter your prompt here, e.g., 'A futuristic city skyline at sunset'"
+                        class="flex-grow p-4 bg-gray-100 text-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder-gray-500 w-full md:w-auto"
+                    >
+                    <button
+                        id="generateButton"
+                        class="gradient-button text-white font-semibold py-3 px-8 rounded-xl shadow-md flex items-center justify-center min-w-[150px] md:min-w-0"
+                    >
+                        <span id="buttonText">Generate Image</span>
+                        <div id="loader" class="loader ml-3 hidden"></div>
+                    </button>
+                </div>
+
+                <!-- Prompt Enhancement Button (only remaining LLM feature) -->
+                <div class="flex justify-center mt-2">
+                    <button
+                        id="enhancePromptButton"
+                        class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-xl shadow-md transition-colors flex items-center justify-center"
+                    >
+                        ✨ Enhance Prompt
+                        <div id="enhanceLoader" class="loader ml-3 hidden"></div>
+                    </button>
+                </div>
+
+                <!-- Style and Aspect Ratio Controls -->
+                <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 mt-4">
+                    <!-- Style Dropdown -->
+                    <div class="w-full md:w-1/2">
+                        <label for="styleSelect" class="block text-gray-600 text-sm font-medium mb-2">Style</label>
+                        <select id="styleSelect" class="p-3 bg-gray-100 text-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 w-full">
+                            <option value="Auto">Auto</option>
+                            <option value="Realistic">Realistic</option>
+                            <option value="Digital Art">Digital Art</option>
+                            <option value="Painting">Painting</option>
+                            <option value="Anime">Anime</option>
+                            <option value="3D Render">3D Render</option>
+                            <option value="Minimalist">Minimalist</option>
+                        </select>
+                    </div>
+
+                    <!-- Aspect Ratio Buttons -->
+                    <div class="w-full md:w-1/2">
+                        <label class="block text-gray-600 text-sm font-medium mb-2">Aspect Ratio</label>
+                        <div class="flex justify-around bg-gray-100 rounded-xl p-2">
+                            <button class="aspect-ratio-button selected px-6 py-2 rounded-lg text-gray-600 font-semibold transition-all hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500" data-aspect="1:1">1:1</button>
+                            <button class="aspect-ratio-button px-6 py-2 rounded-lg text-gray-600 font-semibold transition-all hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500" data-aspect="16:9">16:9</button>
+                            <button class="aspect-ratio-button px-6 py-2 rounded-lg text-gray-600 font-semibold transition-all hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500" data-aspect="9:16">9:16</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="errorMessage" class="text-red-600 mt-4 text-center hidden"></div>
+        </section>
+
+        <!-- Generated Images Display -->
+        <section class="mb-10">
+            <h3 class="text-3xl font-bold text-gray-800 mb-6 text-center">Your Creations</h3>
+            <div id="imageGallery" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Initial placeholder image loaders will be inserted here by JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 p-6 text-center text-gray-600">
+        <p>&copy; 2025 FeelImage. All rights reserved.</p>
+        <p class="mt-2 text-sm">Powered by Gemini API</p>
+    </footer>
+
+    <script>
+        // Get references to DOM elements
+        const body = document.body;
+        const promptInput = document.getElementById('promptInput');
+        const generateButton = document.getElementById('generateButton');
+        const buttonText = document.getElementById('buttonText');
+        const loader = document.getElementById('loader');
+        const imageGallery = document.getElementById('imageGallery');
+        const errorMessage = document.getElementById('errorMessage');
+        const styleSelect = document.getElementById('styleSelect');
+        const aspectRatioButtons = document.querySelectorAll('.aspect-ratio-button');
+        const enhancePromptButton = document.getElementById('enhancePromptButton');
+        const enhanceLoader = document.getElementById('enhanceLoader');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+
+        // State variables for selected options
+        let selectedAspectRatio = '1:1'; // Default aspect ratio
+
+        // --- Dark Mode Logic ---
+        /**
+         * Applies or removes the dark mode class based on the 'isDarkMode' parameter.
+         * Updates the button text accordingly.
+         * @param {boolean} isDarkMode - True to apply dark mode, false for light mode.
+         */
+        function setDarkMode(isDarkMode) {
+            if (isDarkMode) {
+                body.classList.add('dark-mode');
+                darkModeToggle.textContent = 'Light Mode';
+                darkModeToggle.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                darkModeToggle.classList.add('bg-gray-800', 'text-white', 'hover:bg-gray-700');
+            } else {
+                body.classList.remove('dark-mode');
+                darkModeToggle.textContent = 'Dark Mode';
+                darkModeToggle.classList.remove('bg-gray-800', 'text-white', 'hover:bg-gray-700');
+                darkModeToggle.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+            }
+            localStorage.setItem('darkMode', isDarkMode); // Persist preference
+        }
+
+        // Check for saved dark mode preference on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedDarkMode = localStorage.getItem('darkMode');
+            if (savedDarkMode === 'true') {
+                setDarkMode(true);
+            } else {
+                // Ensure initial selection is set for 1:1 if not already present
+                const initialSelectedButton = document.querySelector('.aspect-ratio-button[data-aspect="1:1"]');
+                if (initialSelectedButton && !initialSelectedButton.classList.contains('selected')) {
+                    initialSelectedButton.classList.add('selected');
+                }
+                setDarkMode(false); // Ensure light mode is set if no preference or false
+            }
+        });
+
+        // Toggle dark mode on button click
+        darkModeToggle.addEventListener('click', () => {
+            const currentMode = body.classList.contains('dark-mode');
+            setDarkMode(!currentMode);
+        });
+
+        // --- Existing App Logic ---
+
+        // Event listener for the generate button
+        generateButton.addEventListener('click', generateImage);
+
+        // Event listener for the enhance prompt button
+        enhancePromptButton.addEventListener('click', enhancePrompt);
+
+        // Event listeners for aspect ratio buttons
+        aspectRatioButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove 'selected' class from all buttons
+                aspectRatioButtons.forEach(btn => btn.classList.remove('selected'));
+                // Add 'selected' class to the clicked button
+                button.classList.add('selected');
+                selectedAspectRatio = button.dataset.aspect; // Update the selected aspect ratio
+            });
+        });
+
+        // Function to create and append a loader card
+        function addLoaderToGallery() {
+            const cardDiv = document.createElement('div');
+            // Card class will be handled by existing .card styling, which now has transitions
+            cardDiv.className = 'card rounded-2xl overflow-hidden shadow-lg p-4 flex items-center justify-center';
+            
+            const imageLoaderDiv = document.createElement('div');
+            imageLoaderDiv.className = 'image-loader';
+            // Set loader's aspect ratio dynamically based on selectedAspectRatio
+            imageLoaderDiv.style.paddingTop = getAspectRatioPadding(selectedAspectRatio); 
+
+            const innerLoaderDiv = document.createElement('div');
+            innerLoaderDiv.className = 'inner-loader';
+            
+            const loaderGlowDiv = document.createElement('div');
+            loaderGlowDiv.className = 'loader-glow';
+
+
+            imageLoaderDiv.appendChild(loaderGlowDiv); // Add glow first (z-index 1)
+            imageLoaderDiv.appendChild(innerLoaderDiv); // Add spinner second (z-index 2)
+            cardDiv.appendChild(imageLoaderDiv);
+            imageGallery.prepend(cardDiv); // Add to the beginning
+            return cardDiv; // Return the card div to be updated later
+        }
+
+        // Helper to get padding for aspect ratio (now handles all three)
+        function getAspectRatioPadding(aspect) {
+            switch (aspect) {
+                case '1:1': return '100%';
+                case '16:9': return '56.25%'; // (9/16)*100
+                case '9:16': return '177.77%'; // (16/9)*100
+                default: return '100%'; // Fallback to 1:1
+            }
+        }
+
+        /**
+         * Asynchronously generates an image based on the prompt input.
+         * Handles API call, loading state, and displaying the generated image or error.
+         */
+        async function generateImage() {
+            const prompt = promptInput.value.trim();
+            let selectedStyle = styleSelect.value;
+            const numberOfImages = 4; // We are requesting 4 images at once
+
+            // Validate prompt input
+            if (!prompt) {
+                displayMessage('Please enter a prompt to generate an image.', 'error');
+                return;
+            }
+
+            // Set loading state for image generation
+            setLoading(true, 'generate');
+            displayMessage('', 'clear'); // Clear previous messages
+
+            // Clear existing images and add 4 loader placeholders
+            imageGallery.innerHTML = '';
+            const loaderCards = [];
+            for (let i = 0; i < numberOfImages; i++) {
+                loaderCards.push(addLoaderToGallery());
+            }
+
+            try {
+                // Prepend style to prompt if not 'Auto'
+                const finalPrompt = (selectedStyle !== 'Auto' ? `${selectedStyle}, ` : '') + prompt;
+
+                // Determine image dimensions based on selected aspect ratio
+                let width, height;
+                switch (selectedAspectRatio) {
+                    case '1:1':
+                        width = 1024;
+                        height = 1024;
+                        break;
+                    case '16:9':
+                        width = 1024;
+                        height = 576;
+                        break;
+                    case '9:16':
+                        width = 576;
+                        height = 1024;
+                        break;
+                    default:
+                        width = 1024;
+                        height = 1024; // Fallback to 1:1
+                }
+
+                console.log('Sending Image Generation API request with:');
+                console.log('Prompt:', finalPrompt);
+                console.log('Aspect Ratio Selected:', selectedAspectRatio);
+                console.log('Calculated Dimensions:', `Width: ${width}, Height: ${height}`);
+
+
+                // Prepare the payload for the image generation API
+                const payload = {
+                    instances: { prompt: finalPrompt },
+                    parameters: {
+                        "sampleCount": numberOfImages, // Request 4 images
+                        "width": width,
+                        "height": height
+                    }
+                };
+
+                // API Key (empty string as per instructions for Canvas environment)
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                // Make the API call to generate the image
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // Parse the JSON response
+                const result = await response.json();
+
+                // Log the full API response for inspection
+                console.log('Full Image Generation API Response:', result);
+
+
+                // Check if image data is available in the response
+                if (result.predictions && result.predictions.length > 0) {
+                    // Loop through each generated image and replace its corresponding loader
+                    result.predictions.forEach((prediction, index) => {
+                        if (prediction.bytesBase64Encoded && loaderCards[index]) {
+                            const imageUrl = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
+                            // Replace the loader card's content with the actual image
+                            const cardToUpdate = loaderCards[index];
+                            cardToUpdate.innerHTML = ''; // Clear loader content
+                            // Ensure the card's flex centering is removed after image loads
+                            cardToUpdate.classList.remove('flex', 'items-center', 'justify-center'); 
+                            
+                            // Create the image and prompt elements
+                            const imageContainer = document.createElement('div');
+                            imageContainer.className = 'relative w-full overflow-hidden rounded-xl mb-4';
+                            imageContainer.style.paddingTop = getAspectRatioPadding(selectedAspectRatio);
+
+                            const imgElement = document.createElement('img');
+                            imgElement.src = imageUrl;
+                            imgElement.alt = finalPrompt;
+                            imgElement.className = 'absolute inset-0 w-full h-full object-contain rounded-xl image-fade-in'; /* Added fade-in class */
+
+                            imageContainer.appendChild(imgElement);
+                            cardToUpdate.appendChild(imageContainer);
+
+                            // Removed: promptParagraph, as requested
+                            // const promptParagraph = document.createElement('p');
+                            // promptParagraph.className = 'text-gray-800 text-sm';
+                            // promptParagraph.textContent = finalPrompt;
+                            // cardToUpdate.appendChild(promptParagraph);
+
+                        } else if (loaderCards[index]) {
+                            // If a prediction is missing or invalid, update the loader card to show an error or placeholder
+                            const cardToUpdate = loaderCards[index];
+                            cardToUpdate.innerHTML = `
+                                <img src="https://placehold.co/400x400/FF0000/FFFFFF?text=Error" alt="Error" class="w-full h-auto object-contain rounded-xl mb-4">
+                                <p class="text-red-600 text-sm">Image failed to load.</p>
+                            `;
+                        }
+                    });
+                } else {
+                    // Handle cases where the response structure is unexpected or no predictions
+                    console.error('Unexpected API response structure or no predictions:', result);
+                    displayMessage('Failed to generate images. Please try again.', 'error');
+                    // In case of no predictions, replace loaders with error placeholders
+                    loaderCards.forEach(cardToUpdate => {
+                        cardToUpdate.innerHTML = `
+                            <img src="https://placehold.co/400x400/FF0000/FFFFFF?text=Error" alt="Error" class="w-full h-auto object-contain rounded-xl mb-4">
+                            <p class="text-red-600 text-sm">Image failed to load.</p>
+                        `;
+                    });
+                }
+            } catch (error) {
+                // Catch any network or API errors
+                console.error('Error generating images:', error);
+                displayMessage('An error occurred during image generation. Please check your network connection or try again later.', 'error');
+                // Replace all loaders with error placeholders on caught error
+                loaderCards.forEach(cardToUpdate => {
+                    cardToUpdate.innerHTML = `
+                        <img src="https://placehold.co/400x400/FF0000/FFFFFF?text=Error" alt="Error" class="w-full h-auto object-contain rounded-xl mb-4">
+                        <p class="text-red-600 text-sm">Network error.</p>
+                    `;
+                });
+            } finally {
+                // Reset loading state regardless of success or failure
+                setLoading(false, 'generate');
+            }
+        }
+
+        /**
+         * Asynchronously enhances the user's prompt using the Gemini LLM.
+         */
+        async function enhancePrompt() {
+            const currentPrompt = promptInput.value.trim();
+            const selectedStyle = styleSelect.value;
+
+            if (!currentPrompt) {
+                displayMessage('Please enter a prompt to enhance.', 'error');
+                return;
+            }
+
+            setLoading(true, 'enhance');
+            displayMessage('', 'clear'); // Clear previous messages
+
+            try {
+                let chatHistory = [];
+                const llmPrompt = `You are an AI image generation prompt enhancer. Your goal is to take a brief user idea and expand it into a detailed, evocative prompt suitable for an image generation model. Consider the requested style if provided. Make the output concise but descriptive, focusing on visual elements. Do not include any conversational text or greetings, just the enhanced prompt.
+
+                User idea: ${currentPrompt}
+                Style: ${selectedStyle}
+
+                Enhanced prompt:`;
+
+                chatHistory.push({ role: "user", parts: [{ text: llmPrompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // API Key (empty string for Canvas)
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                console.log('Full Prompt Enhancement API Response:', result);
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const enhancedText = result.candidates[0].content.parts[0].text;
+                    promptInput.value = enhancedText.trim(); // Update the prompt input with the enhanced text
+                    displayMessage('Prompt enhanced successfully!', 'success'); // Optional success message
+                } else {
+                    console.error('Unexpected LLM response structure:', result);
+                    displayMessage('Failed to enhance prompt. Please try again.', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error enhancing prompt:', error);
+                displayMessage('An error occurred during prompt enhancement. Please try again later.', 'error');
+            } finally {
+                setLoading(false, 'enhance');
+            }
+        }
+
+        /**
+         * Sets the loading state of the button and shows/hides the loader.
+         * @param {boolean} isLoading - True to show loading, false to hide.
+         * @param {string} type - 'generate' for image generation, 'enhance' for prompt enhancement.
+         */
+        function setLoading(isLoading, type) {
+            // Main Generate Button
+            if (type === 'generate') {
+                generateButton.disabled = isLoading;
+                if (isLoading) {
+                    buttonText.textContent = 'Generating...';
+                    loader.classList.remove('hidden');
+                } else {
+                    buttonText.textContent = 'Generate Image';
+                    loader.classList.add('hidden');
+                }
+            }
+            // Enhance Prompt Button
+            else if (type === 'enhance') {
+                enhancePromptButton.disabled = isLoading;
+                if (isLoading) {
+                    enhancePromptButton.textContent = 'Enhancing...';
+                    enhanceLoader.classList.remove('hidden');
+                } else {
+                    enhancePromptButton.innerHTML = '✨ Enhance Prompt';
+                    enhanceLoader.classList.add('hidden');
+                }
+            }
+
+            // Disable other main interaction buttons while one LLM operation is in progress
+            const anyLLMLoading = (
+                (type === 'enhance' && isLoading)
+            );
+
+            generateButton.disabled = isLoading || anyLLMLoading;
+            enhancePromptButton.disabled = isLoading || (type === 'generate' && isLoading) || anyLLMLoading;
+
+            // Re-enable all primary buttons if nothing is loading
+            if (!isLoading && !anyLLMLoading) {
+                 generateButton.disabled = false;
+                 enhancePromptButton.disabled = false;
+            }
+        }
+
+
+        /**
+         * Displays a message to the user (e.g., error or success) in the main error area.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'error' for error messages, 'clear' to clear messages, 'success' for success messages.
+         */
+        function displayMessage(message, type) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden', 'text-red-600', 'text-green-600');
+            if (type === 'error') {
+                errorMessage.classList.add('text-red-600');
+            } else if (type === 'success') {
+                errorMessage.classList.add('text-green-600');
+            } else if (type === 'clear') {
+                errorMessage.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
