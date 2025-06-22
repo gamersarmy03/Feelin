@@ -471,36 +471,29 @@
                 imageGrid.innerHTML = '';
 
                 setTimeout(() => {
-                    // --- START OF THE CODE CHANGE ---
-
-                    // 1. Get the text from the prompt input field
                     const promptText = promptInput.value;
                     const activeStyle = document.querySelector('.style-pill.active').innerText;
 
-                    // 2. Create keywords for the image search. Use the prompt and style.
-                    // If the prompt is empty, use a default term like "creative".
-                    let keywords = (promptText.trim() || 'creative concept') + ',' + activeStyle;
-                    // For the "Auto" style, we won't add it as a keyword.
-                    if (activeStyle === 'Auto' || activeStyle === 'Realistic') {
-                        keywords = promptText.trim() || 'creative concept';
+                    let keywords = (promptText.trim() || 'creative concept');
+                    // Add style as a keyword unless it's 'Auto'
+                    if (activeStyle !== 'Auto') {
+                        keywords += ',' + activeStyle;
                     }
                     
                     for (let i = 0; i < 4; i++) {
                         const imageCard = document.createElement('div');
                         imageCard.classList.add('image-card');
                         
-                        // 3. Construct a URL using the Unsplash service with our keywords.
-                        // This will fetch an image related to the prompt!
-                        // The `&${Date.now() + i}` part ensures we get a fresh image each time.
-                        const imageUrl = `https://source.unsplash.com/500x500/?${encodeURIComponent(keywords)}&${Date.now() + i}`;
-
-                        // --- THIS IS THE OLD CODE THAT WAS REPLACED ---
-                        // const oldImageUrl = `https://picsum.photos/500/500?random=${Date.now() + i}`;
-                        // --- END OF THE CODE CHANGE ---
+                        // --- START OF THE FIX ---
+                        // We are now using loremflickr.com, which is more reliable.
+                        // The `?random=${i}` part ensures we get a different image for each card.
+                        const imageUrl = `https://loremflickr.com/500/500/${encodeURIComponent(keywords)}?random=${i}`;
+                        // --- END OF THE FIX ---
 
                         imageCard.style.setProperty('--delay', `${i * 100}ms`);
                         imageCard.innerHTML = `
-                            <img src="${imageUrl}" alt="${promptText}">
+                            <img src="${imageUrl}" alt="${promptText}" 
+                                 onerror="this.onerror=null; this.src='https://loremflickr.com/500/500/abstract?random=${i+5}';">
                             <div class="overlay">
                                 <div class="actions">
                                     <div class="action-btn" title="Download"><i class="fa-solid fa-download"></i></div>
@@ -514,10 +507,11 @@
 
                     generateBtn.classList.remove('loading');
                     generateBtn.disabled = false;
-                }, 2500);
+                }, 2000); // Reduced delay slightly
             }
 
             // Initial load
+            promptInput.value = "A synthwave sunset over a cyberpunk city";
             generateImages();
         });
     </script>
