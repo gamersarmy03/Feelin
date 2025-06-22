@@ -152,14 +152,17 @@
         .image-card img.loaded {
             opacity: 1; /* Fade in when loaded */
         }
-        .skeleton {
+        /* Adjusted skeleton to include spinner */
+        .image-card.skeleton {
             background-color: rgba(255, 255, 255, 0.3);
-            animation: pulse 1.5s infinite ease-in-out;
+            display: flex; /* Ensure flex for centering spinner */
+            align-items: center;
+            justify-content: center;
+            position: relative; /* For spinner positioning */
+            min-height: 200px; /* Ensure skeleton has height */
         }
-        @keyframes pulse {
-            0% { opacity: 0.3; }
-            50% { opacity: 0.6; }
-            100% { opacity: 0.3; }
+        .image-card.skeleton .loading-spinner {
+            display: block; /* Make spinner visible inside skeleton */
         }
         .loading-spinner {
             border: 4px solid rgba(255, 255, 255, 0.3);
@@ -168,6 +171,8 @@
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
+            /* Initially hidden, shown by .image-card.skeleton */
+            display: none;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -260,15 +265,7 @@
             <h2 class="text-3xl font-bold mb-6 text-center text-white drop-shadow">Your Creations</h2>
             <div id="imageGrid" class="image-grid">
                 <!-- Image cards will be inserted here by JavaScript -->
-                <!-- Placeholder skeleton loaders -->
-                <div class="image-card skeleton"></div>
-                <div class="image-card skeleton hidden sm:flex"></div>
-                <div class="image-card skeleton hidden lg:flex"></div>
-                <div class="image-card skeleton hidden lg:flex"></div>
-            </div>
-            <div id="loadingIndicator" class="text-center mt-8 hidden">
-                <div class="loading-spinner mx-auto"></div>
-                <p class="mt-4 text-white text-lg">Generating your masterpieces...</p>
+                <!-- Placeholder skeleton loaders are dynamically created by JS now -->
             </div>
         </section>
     </div>
@@ -281,8 +278,8 @@
 
     <script>
         // API key for Imagen API (leave empty, Canvas provides it)
-        const IMAGEN_API_KEY = "AIzaSyDBkEe5wzHuNTmlavZrLmePdNcHpYKh-OU";
-        const GEMINI_API_KEY = "AIzaSyCT_hRShR7x-luU4bMCNCTj9vunETcOqGk"; // For prompt enhancement
+        const IMAGEN_API_KEY = "";
+        const GEMINI_API_KEY = ""; // For prompt enhancement
 
         // Get DOM elements
         const promptInput = document.getElementById('prompt');
@@ -291,7 +288,6 @@
         const randomBtn = document.getElementById('randomBtn');
         const enhanceBtn = document.getElementById('enhanceBtn');
         const imageGrid = document.getElementById('imageGrid');
-        const loadingIndicator = document.getElementById('loadingIndicator');
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
         const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
@@ -324,12 +320,15 @@
         // Event listener for message box close button
         messageBoxCloseBtn.addEventListener('click', hideMessageBox);
 
-        // Function to generate image cards with skeletons
+        // Function to generate image cards with skeletons and embedded spinners
         function createSkeletonLoaders() {
             imageGrid.innerHTML = ''; // Clear previous images/skeletons
             for (let i = 0; i < 4; i++) {
                 const card = document.createElement('div');
                 card.className = 'image-card skeleton';
+                const spinner = document.createElement('div');
+                spinner.className = 'loading-spinner';
+                card.appendChild(spinner);
                 imageGrid.appendChild(card);
             }
         }
@@ -342,8 +341,7 @@
                 return;
             }
 
-            // Show loading indicator and skeleton loaders
-            loadingIndicator.classList.remove('hidden');
+            // Show skeleton loaders (which now contain spinners)
             createSkeletonLoaders();
             generateBtn.disabled = true;
             randomBtn.disabled = true;
@@ -380,13 +378,13 @@
                 const result = await response.json();
 
                 // Clear skeletons and display generated images
-                imageGrid.innerHTML = '';
+                imageGrid.innerHTML = ''; // Clear existing skeletons
                 if (result.predictions && result.predictions.length > 0) {
                     result.predictions.forEach(prediction => {
                         if (prediction.bytesBase64Encoded) {
                             const imageUrl = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
                             const imageCard = document.createElement('div');
-                            imageCard.className = 'image-card';
+                            imageCard.className = 'image-card'; // No 'skeleton' class here
                             const img = document.createElement('img');
                             img.src = imageUrl;
                             img.alt = prompt;
@@ -399,13 +397,16 @@
                     });
                 } else {
                     showMessage("No images were generated. Please try a different prompt.");
+                    // Re-add skeleton loaders if no images were generated to show empty state
+                    createSkeletonLoaders();
                 }
 
             } catch (error) {
                 console.error('Error generating images:', error);
                 showMessage("An error occurred while generating images. Please try again later.");
+                // Re-add skeleton loaders on error
+                createSkeletonLoaders();
             } finally {
-                loadingIndicator.classList.add('hidden');
                 generateBtn.disabled = false;
                 randomBtn.disabled = false;
                 enhanceBtn.disabled = false;
@@ -420,10 +421,10 @@
                 return;
             }
 
-            // Show loading indicator for enhancement
+            // Show loading indicator for enhancement (spinner inside button)
             enhanceBtn.disabled = true;
             const originalBtnIcon = enhanceBtn.innerHTML;
-            enhanceBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Spinner inside button
+            enhanceBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             try {
                 const chatHistory = [];
