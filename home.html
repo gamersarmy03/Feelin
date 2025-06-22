@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream Weaver AI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Styles for Font and basic body setup -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: linear-gradient(to bottom right, #4c1d95, #1e3a8a, #312e81); /* Adjusted gradient for body */
+            min-height: 100vh; /* Ensure full viewport height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-800 via-blue-900 to-indigo-950 text-white flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+
+    <div class="max-w-4xl w-full bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-2xl shadow-xl p-6 sm:p-8 lg:p-10 border border-purple-400 border-opacity-30">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-center mb-6 sm:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300">
+            Dream Weaver AI
+        </h1>
+        <p class="text-lg text-center mb-8 text-purple-200">
+            Unleash your creativity. Describe your vision, and we'll conjure it into reality.
+        </p>
+
+        <div class="mb-8">
+            <textarea
+                id="promptInput"
+                class="w-full p-4 text-lg text-gray-800 bg-white bg-opacity-90 rounded-xl border-2 border-purple-500 focus:ring-4 focus:ring-purple-300 focus:border-transparent transition-all duration-300 shadow-inner resize-y min-h-[100px]"
+                placeholder="Enter your vivid description here (e.g., 'A futuristic city at sunset, neon lights reflecting on wet streets, flying cars, cyberpunk style, highly detailed')..."
+                rows="4"
+            ></textarea>
+        </div>
+
+        <!-- Style Selection Dropdown -->
+        <div class="mb-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <label for="imageStyleSelect" class="text-lg text-purple-200">Image Style:</label>
+            <select
+                id="imageStyleSelect"
+                class="p-3 text-lg text-gray-800 bg-white bg-opacity-90 rounded-xl border-2 border-purple-500 focus:ring-4 focus:ring-purple-300 focus:border-transparent transition-all duration-300 shadow-inner"
+            >
+                <option value="Auto">Auto</option>
+                <option value="Realistic">Realistic</option>
+                <option value="Digital Art">Digital Art</option>
+                <option value="Painting">Painting</option>
+                <option value="Anime">Anime</option>
+                <option value="3D Render">3D Render</option>
+                <option value="Minimalist">Minimalist</option>
+            </select>
+        </div>
+
+        <!-- Aspect Ratio Buttons -->
+        <div class="mb-8 flex flex-col items-center">
+            <span class="text-lg text-purple-200 mb-3">Aspect Ratio:</span>
+            <div id="aspectRatioButtons" class="flex gap-4">
+                <button data-ratio="1:1" class="px-6 py-2 rounded-lg text-lg font-medium transition-all duration-200 bg-purple-600 text-white shadow-md focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75">1:1</button>
+                <button data-ratio="16:9" class="px-6 py-2 rounded-lg text-lg font-medium transition-all duration-200 bg-white bg-opacity-20 text-purple-100 hover:bg-opacity-30 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75">16:9</button>
+                <button data-ratio="9:16" class="px-6 py-2 rounded-lg text-lg font-medium transition-all duration-200 bg-white bg-opacity-20 text-purple-100 hover:bg-opacity-30 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75">9:16</button>
+            </div>
+        </div>
+
+        <div class="flex justify-center mb-8">
+            <button
+                id="generateButton"
+                class="px-8 py-3 rounded-full text-xl font-semibold transition-all duration-300 transform bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 shadow-lg hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75"
+            >
+                Generate Images
+            </button>
+        </div>
+
+        <div id="errorMessage" class="hidden bg-red-500 text-white p-4 rounded-xl mb-6 text-center shadow-md"></div>
+
+        <div id="loadingIndicator" class="hidden flex justify-center items-center text-lg text-purple-300 mt-8 p-6 bg-white bg-opacity-10 rounded-xl border border-purple-400 border-opacity-30">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating Dreams...
+        </div>
+
+        <div id="imagesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8"></div>
+
+        <div id="initialMessage" class="text-center text-purple-300 text-lg mt-8 p-6 bg-white bg-opacity-10 rounded-xl border border-purple-400 border-opacity-30">
+            Your generated images will appear here. Start by typing a prompt above!
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const promptInput = document.getElementById('promptInput');
+        const imageStyleSelect = document.getElementById('imageStyleSelect');
+        const aspectRatioButtons = document.getElementById('aspectRatioButtons');
+        const generateButton = document.getElementById('generateButton');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const imagesContainer = document.getElementById('imagesContainer');
+        const initialMessage = document.getElementById('initialMessage');
+
+        // State variables (managed directly in global scope for simplicity in plain JS)
+        let currentAspectRatio = '1:1'; // Default aspect ratio
+
+        // Function to update active aspect ratio button style
+        function updateAspectRatioButtons(selectedRatio) {
+            const buttons = aspectRatioButtons.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (button.dataset.ratio === selectedRatio) {
+                    button.classList.remove('bg-white', 'bg-opacity-20', 'text-purple-100', 'hover:bg-opacity-30');
+                    button.classList.add('bg-purple-600', 'text-white', 'shadow-md');
+                } else {
+                    button.classList.remove('bg-purple-600', 'text-white', 'shadow-md');
+                    button.classList.add('bg-white', 'bg-opacity-20', 'text-purple-100', 'hover:bg-opacity-30');
+                }
+            });
+        }
+
+        // Event Listeners
+        aspectRatioButtons.addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON') {
+                currentAspectRatio = event.target.dataset.ratio;
+                updateAspectRatioButtons(currentAspectRatio);
+            }
+        });
+
+        generateButton.addEventListener('click', generateImages);
+
+        // Initial call to set the default button style
+        updateAspectRatioButtons(currentAspectRatio);
+
+        // Function to handle image generation
+        async function generateImages() {
+            const prompt = promptInput.value.trim();
+            const imageStyle = imageStyleSelect.value;
+
+            // Clear previous UI states
+            errorMessageDiv.classList.add('hidden');
+            errorMessageDiv.textContent = '';
+            imagesContainer.innerHTML = ''; // Clear previous images
+            initialMessage.classList.add('hidden'); // Hide initial message
+            loadingIndicator.classList.remove('hidden'); // Show loading indicator
+            generateButton.disabled = true; // Disable button during loading
+            generateButton.classList.add('bg-gray-600', 'cursor-not-allowed', 'animate-pulse');
+            generateButton.classList.remove('bg-gradient-to-r', 'from-purple-600', 'to-pink-600', 'hover:from-purple-700', 'hover:to-pink-700', 'active:scale-95', 'shadow-lg', 'hover:shadow-2xl');
+
+
+            if (!prompt) {
+                errorMessageDiv.textContent = 'Please enter a prompt to generate images.';
+                errorMessageDiv.classList.remove('hidden');
+                loadingIndicator.classList.add('hidden');
+                generateButton.disabled = false;
+                generateButton.classList.remove('bg-gray-600', 'cursor-not-allowed', 'animate-pulse');
+                generateButton.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-pink-600', 'hover:from-purple-700', 'hover:to-pink-700', 'active:scale-95', 'shadow-lg', 'hover:shadow-2xl');
+                initialMessage.classList.remove('hidden'); // Show initial message if prompt is empty
+                return;
+            }
+
+            let width, height;
+            switch (currentAspectRatio) {
+                case '1:1':
+                    width = 1024;
+                    height = 1024;
+                    break;
+                case '16:9':
+                    width = 1024;
+                    height = 576;
+                    break;
+                case '9:16':
+                    width = 576;
+                    height = 1024;
+                    break;
+                default:
+                    width = 1024;
+                    height = 1024;
+            }
+
+            const fullPrompt = imageStyle === 'Auto' ? prompt : `${prompt}, ${imageStyle}`;
+
+            const payload = {
+                instances: { prompt: fullPrompt },
+                parameters: {
+                    sampleCount: 4,
+                    width: width,
+                    height: height,
+                }
+            };
+
+            const apiKey = ""; // Canvas will provide this at runtime for imagen-3.0-generate-002
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.predictions && result.predictions.length > 0) {
+                    result.predictions.forEach((prediction, index) => {
+                        const imageUrl = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
+                        const imageDiv = document.createElement('div');
+                        imageDiv.className = "bg-white bg-opacity-15 p-4 rounded-xl shadow-lg border border-purple-400 border-opacity-40 transform hover:scale-105 transition-transform duration-300";
+
+                        const imgElement = document.createElement('img');
+                        imgElement.src = imageUrl;
+                        imgElement.alt = `Generated Image ${index + 1}`;
+                        imgElement.className = "w-full h-auto rounded-lg object-cover shadow-md";
+                        imgElement.onerror = (e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://placehold.co/400x300/6A0DAD/ffffff?text=Image+Failed+to+Load";
+                        };
+
+                        imageDiv.appendChild(imgElement);
+                        imagesContainer.appendChild(imageDiv);
+                    });
+                } else {
+                    errorMessageDiv.textContent = 'No images were generated. Please try a different prompt.';
+                    errorMessageDiv.classList.remove('hidden');
+                    initialMessage.classList.remove('hidden'); // Show initial message if no images are generated
+                }
+            } catch (error) {
+                console.error('Error generating images:', error);
+                errorMessageDiv.textContent = 'Failed to generate images. Please try again later.';
+                errorMessageDiv.classList.remove('hidden');
+                initialMessage.classList.remove('hidden'); // Show initial message on error
+            } finally {
+                loadingIndicator.classList.add('hidden'); // Hide loading indicator
+                generateButton.disabled = false; // Enable button
+                generateButton.classList.remove('bg-gray-600', 'cursor-not-allowed', 'animate-pulse');
+                generateButton.classList.add('bg-gradient-to-r', 'from-purple-600', 'to-pink-600', 'hover:from-purple-700', 'hover:to-pink-700', 'active:scale-95', 'shadow-lg', 'hover:shadow-2xl');
+
+                if (imagesContainer.children.length === 0 && errorMessageDiv.classList.contains('hidden')) {
+                    initialMessage.classList.remove('hidden'); // Re-show initial message if no images and no error
+                }
+            }
+        }
+    </script>
+</body>
+</html>
