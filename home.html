@@ -1,114 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DreamWeaver</title>
-  <style>
-    /* Gradient background */
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #6a0dad, #0000ff);
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      animation: bgShift 15s ease infinite;
-    }
-    @keyframes bgShift {
-      0% { background: linear-gradient(135deg, #6a0dad, #0000ff); }
-      50% { background: linear-gradient(135deg, #0000ff, #6a0dad); }
-      100% { background: linear-gradient(135deg, #6a0dad, #0000ff); }
-    }
-    header { padding: 1em; text-align: center; }
-    .prompt-bar { width: 90%; max-width: 600px; display: flex; gap:8px; margin-bottom: 1em; }
-    .prompt-bar input, .prompt-bar select, .prompt-bar button {
-      flex: 1;
-      padding: 0.5em;
-      border: none;
-      border-radius: 0.3em;
-      font-size: 1em;
-    }
-    .prompt-bar input { background: #fff; color: #333; }
-    .prompt-bar select { max-width: 150px; }
-    .prompt-bar button { background: #fff; color: #333; cursor: pointer; transition: transform .2s; }
-    .prompt-bar button:hover { transform: scale(1.05); }
-    .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; width: 90%; max-width: 1000px; }
-    .images img {
-      width: 100%; border: 2px solid #fff; border-radius: 8px;
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @media (max-width:768px) {
-      .prompt-bar { flex-direction: column; }
-      .prompt-bar select, .prompt-bar button { width: 100%; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamWeaver</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Purple to Blue Gradient Background */
+            background: linear-gradient(135deg, #6b46c1 0%, #4c51bf 100%); /* Tailwind's purple-700 to indigo-700 */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #a78bfa; /* purple-400 */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6; /* purple-500 */
+        }
+
+        .gradient-button {
+            background: linear-gradient(45deg, #8b5cf6, #a78bfa); /* Tailwind's purple-500 to purple-400 */
+            transition: all 0.3s ease;
+        }
+
+        .gradient-button:hover {
+            background: linear-gradient(45deg, #a78bfa, #8b5cf6); /* Invert for hover effect */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .image-placeholder {
+            background-color: #e0e7ff; /* indigo-100 */
+            border: 2px dashed #a78bfa; /* purple-400 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            color: #6b46c1; /* purple-700 */
+            text-align: center;
+        }
+
+        /* Responsive grid for images */
+        @media (max-width: 768px) {
+            .image-grid {
+                grid-template-columns: 1fr !important; /* Single column on small screens */
+            }
+        }
+        .modal {
+            display: none; /* Hidden by default, controlled by JS */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            transform: scale(0.9); /* Start slightly smaller for animation */
+            opacity: 0; /* Start hidden for animation */
+            animation: fadeInScale 0.3s forwards ease-out; /* Animation on display */
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Loader animation */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #8b5cf6; /* Purple */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Fade-in animation for main container */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Scale and fade-in for modal */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </head>
-<body>
-  <header>
-    <h1>🎨 DreamWeaver</h1>
-    <p>Text → Image generator with styles, Enhance & Random prompt</p>
-  </header>
+<body class="p-4 md:p-8">
 
-  <div class="prompt-bar">
-    <input id="promptInput" type="text" placeholder="Enter your prompt…" />
-    <select id="styleSelect">
-      <option value="auto">Auto</option>
-      <option value="realistic">Realistic</option>
-      <option value="digital art">Digital Art</option>
-      <option value="painting">Painting</option>
-      <option value="anime">Anime</option>
-      <option value="3d render">3D Render</option>
-      <option value="minimalist">Minimalist</option>
-      <option value="black&white">Black & White</option>
-      <option value="sketch">Sketch</option>
-    </select>
-    <button id="enhanceBtn">Enhance</button>
-    <button id="randomBtn">🎲 Random</button>
-    <button id="generateBtn">Generate</button>
-  </div>
+    <!-- Main Container -->
+    <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-10 w-full max-w-6xl mx-auto flex flex-col gap-6 opacity-0 animate-fade-in" id="main-container">
 
-  <div class="images">
-    <img id="img1" src="" alt="">
-    <img id="img2" src="" alt="">
-    <img id="img3" src="https://image-generator.example.com/AIzaSyCsubB93qbX3oinDnV4T3DcZHu8F7hU6jE/3" alt="">
-    <img id="img4" src="" alt="">
-  </div>
+        <!-- Header -->
+        <h1 class="text-4xl md:text-5xl font-bold text-center text-purple-700 mb-6 drop-shadow-md">DreamWeaver</h1>
 
-  <script>
-    const rndPrompts = [
-      'Futuristic purple city at dusk',
-      'Anime forest under moonlight',
-      '3D render of abstract shapes',
-      'Minimalist white butterfly on blue',
-      'Black & white sketch of mountains',
-      'Digital art portrait in neon light'
-    ];
+        <!-- Input and Controls Section -->
+        <div class="flex flex-col md:flex-row items-center gap-4">
+            <input type="text" id="prompt-input" placeholder="Enter your creative prompt here..."
+                   class="flex-1 p-3 rounded-lg border-2 border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300 shadow-sm text-gray-800">
 
-    const input = document.getElementById('promptInput');
-    const styleSelect = document.getElementById('styleSelect');
-    const imgs = [1,2,3,4].map(n=>document.getElementById('img'+n));
+            <select id="style-select"
+                    class="p-3 rounded-lg border-2 border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300 shadow-sm text-gray-800 bg-white">
+                <option value="">Auto</option>
+                <option value=", realistic">Realistic</option>
+                <option value=", digital art">Digital Art</option>
+                <option value=", painting">Painting</option>
+                <option value=", anime style">Anime</option>
+                <option value=", 3d render">3D Render</option>
+                <option value=", minimalist">Minimalist</option>
+                <option value=", black and white">Black & White</option>
+                <option value=", sketch">Sketch</option>
+            </select>
 
-    document.getElementById('randomBtn').addEventListener('click', () => {
-      input.value = rndPrompts[Math.floor(Math.random()*rndPrompts.length)];
-    });
+            <button id="enhance-prompt-btn"
+                    class="gradient-button text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 transition-all duration-300 ease-in-out">
+                Enhance Prompt
+            </button>
 
-    document.getElementById('enhanceBtn').addEventListener('click', () => {
-      // Example: append some Magic Prompt-like enhancement
-      input.value += ', ultra detailed, high contrast, epic composition';
-    });
+            <button id="random-prompt-btn"
+                    class="gradient-button text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 transition-all duration-300 ease-in-out">
+                Random
+            </button>
+        </div>
 
-    document.getElementById('generateBtn').addEventListener('click', async () => {
-      const prompt = input.value;
-      const style = styleSelect.value;
-      // Fake API call: in real use, fetch your endpoint
-      for (let i=0;i<4;i++){
-        imgs[i].src = `https://image-generator.example.com/AIzaSyCsubB93qbX3oinDnV4T3DcZHu8F7hU6jE/${i+1}?prompt=${encodeURIComponent(prompt)}&style=${encodeURIComponent(style)}`;
-      }
-    });
-  </script>
+        <!-- Generate Button -->
+        <button id="generate-btn"
+                class="gradient-button text-white font-bold py-4 px-8 rounded-lg shadow-xl hover:shadow-2xl text-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 mt-4 transition-all duration-300 ease-in-out">
+            Generate Images
+        </button>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="hidden text-center mt-6 text-purple-600">
+            <div class="loader mb-4 mx-auto"></div>
+            <p class="text-lg">Weaving your dreams into reality...</p>
+        </div>
+
+        <!-- Image Display Section -->
+        <div id="image-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
+            <!-- Image Placeholders / Display Area -->
+            <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=Image+1" alt="Generated Image 1" class="w-full h-full object-contain rounded-xl" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e0e7ff/6b46c1?text=Error+Loading+Image';">
+            </div>
+            <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=Image+2" alt="Generated Image 2" class="w-full h-full object-contain rounded-xl" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e0e7ff/6b46c1?text=Error+Loading+Image';">
+            </div>
+            <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=Image+3" alt="Generated Image 3" class="w-full h-full object-contain rounded-xl" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e0e7ff/6b46c1?text=Error+Loading+Image';">
+            </div>
+            <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=Image+4" alt="Generated Image 4" class="w-full h-full object-contain rounded-xl" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e0e7ff/6b46c1?text=Error+Loading+Image';">
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Box Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeMessageModal()">&times;</span>
+            <p id="modalMessage" class="text-lg text-gray-700"></p>
+        </div>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const promptInput = document.getElementById('prompt-input');
+        const styleSelect = document.getElementById('style-select');
+        const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+        const randomPromptBtn = document.getElementById('random-prompt-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const imageGrid = document.getElementById('image-grid');
+        const mainContainer = document.getElementById('main-container');
+
+        // Random prompts for the 'Random' button
+        const randomPrompts = [
+            "A majestic lion with a glowing mane in a futuristic city, cyberpunk style",
+            "Underwater kingdom with bioluminescent creatures and ancient ruins, digital painting",
+            "A lone astronaut on a alien planet, stargazing at a double sunset, realistic",
+            "Fantasy forest with wise old trees and magical glowing mushrooms, painting",
+            "Steampunk airship flying over a Victorian London skyline, 3d render",
+            "A serene Japanese garden with cherry blossoms and a small waterfall, anime style",
+            "Abstract geometric patterns forming a cityscape, minimalist",
+            "Portrait of a robot playing a violin in a dimly lit jazz club, black and white",
+            "Sketch of a dragon perched on a mountain peak, overlooking a valley",
+            "A whimsical cottage nestled among giant sunflowers, digital art",
+            "Cyberpunk street market at night, neon lights, rain, and diverse characters",
+            "Ancient Greek temple ruins overgrown with lush jungle, mysterious atmosphere",
+            "A cat wearing a wizard hat casting a spell, cartoon style",
+            "A futuristic car hovering over a desert road at sunset",
+            "A medieval knight battling a mythical beast in a snowy landscape"
+        ];
+
+        // Function to show the message modal
+        function showMessageModal(message) {
+            const modal = document.getElementById('messageModal');
+            const modalMessage = document.getElementById('modalMessage');
+            modalMessage.textContent = message;
+            modal.style.display = 'flex'; // Use flex to center
+        }
+
+        // Function to close the message modal
+        function closeMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        // Animate main container on load
+        document.addEventListener('DOMContentLoaded', () => {
+            mainContainer.classList.add('opacity-100'); // Simply make it visible on load
+        });
+
+        /**
+         * Calls the Imagen API to generate images based on a prompt.
+         * @param {string} prompt - The text prompt for image generation.
+         * @returns {Promise<Array<string>>} - A promise that resolves to an array of image URLs (base64 encoded).
+         */
+        async function generateImages(prompt) {
+            loadingIndicator.classList.remove('hidden'); // Show loading indicator
+            generateBtn.disabled = true; // Disable generate button
+
+            try {
+                const payload = {
+                    instances: { prompt: prompt },
+                    parameters: { "sampleCount": 4 } // Request 4 images
+                };
+                // API key is handled by the Canvas environment, leave it as an empty string.
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.predictions && result.predictions.length > 0) {
+                    const imageBase64s = result.predictions.map(pred => pred.bytesBase64Encoded);
+                    return imageBase64s.map(base64 => `data:image/png;base64,${base64}`);
+                } else {
+                    showMessageModal("No images generated. Please try a different prompt.");
+                    console.error("Image generation failed:", result);
+                    return [];
+                }
+            } catch (error) {
+                showMessageModal("An error occurred during image generation. Please try again.");
+                console.error("Error generating images:", error);
+                return [];
+            } finally {
+                loadingIndicator.classList.add('hidden'); // Hide loading indicator
+                generateBtn.disabled = false; // Enable generate button
+            }
+        }
+
+        /**
+         * Enhances the given prompt using the Gemini 2.0 Flash model.
+         * @param {string} currentPrompt - The current prompt entered by the user.
+         * @returns {Promise<string>} - A promise that resolves to the enhanced prompt.
+         */
+        async function enhancePrompt(currentPrompt) {
+            loadingIndicator.classList.remove('hidden');
+            enhancePromptBtn.disabled = true;
+
+            try {
+                let chatHistory = [];
+                chatHistory.push({
+                    role: "user",
+                    parts: [{ text: `Elaborate and enhance this image generation prompt to be more descriptive and creative, suitable for a text-to-image AI: "${currentPrompt}". Provide only the enhanced prompt.` }]
+                });
+
+                const payload = { contents: chatHistory };
+                // API key is handled by the Canvas environment, leave it as an empty string.
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const enhancedText = result.candidates[0].content.parts[0].text;
+                    // Remove any leading/trailing quotes or extra text
+                    return enhancedText.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+                } else {
+                    showMessageModal("Could not enhance prompt. Please try again.");
+                    console.error("Prompt enhancement failed:", result);
+                    return currentPrompt; // Return original prompt if enhancement fails
+                }
+            } catch (error) {
+                showMessageModal("An error occurred during prompt enhancement. Please try again.");
+                console.error("Error enhancing prompt:", error);
+                return currentPrompt; // Return original prompt on error
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                enhancePromptBtn.disabled = false;
+            }
+        }
+
+        // Event Listener for Generate Button
+        generateBtn.addEventListener('click', async () => {
+            const userPrompt = promptInput.value.trim();
+            const selectedStyle = styleSelect.value;
+            const fullPrompt = userPrompt + selectedStyle;
+
+            if (userPrompt === "") {
+                showMessageModal("Please enter a prompt before generating images.");
+                return;
+            }
+
+            const imageUrls = await generateImages(fullPrompt);
+            if (imageUrls.length > 0) {
+                imageGrid.innerHTML = ''; // Clear previous images
+
+                imageUrls.forEach((url, index) => {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4';
+                    imgContainer.innerHTML = `
+                        <img src="${url}" alt="Generated Image ${index + 1}" class="w-full h-full object-contain rounded-xl" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e0e7ff/6b46c1?text=Error+Loading+Image';">
+                    `;
+                    imageGrid.appendChild(imgContainer);
+                });
+            } else {
+                // If no images were returned, display placeholders or an error message.
+                imageGrid.innerHTML = `
+                    <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                        <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=No+Image+Generated" alt="No Image 1" class="w-full h-full object-contain rounded-xl">
+                    </div>
+                    <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                        <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=No+Image+Generated" alt="No Image 2" class="w-full h-full object-contain rounded-xl">
+                    </div>
+                    <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                        <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=No+Image+Generated" alt="No Image 3" class="w-full h-full object-contain rounded-xl">
+                    </div>
+                    <div class="image-placeholder rounded-xl h-64 md:h-80 lg:h-96 shadow-md overflow-hidden p-4">
+                        <img src="https://placehold.co/400x400/e0e7ff/6b46c1?text=No+Image+Generated" alt="No Image 4" class="w-full h-full object-contain rounded-xl">
+                    </div>
+                `;
+            }
+        });
+
+        // Event Listener for Enhance Prompt Button
+        enhancePromptBtn.addEventListener('click', async () => {
+            const currentPrompt = promptInput.value.trim();
+            if (currentPrompt === "") {
+                showMessageModal("Please enter a prompt to enhance.");
+                return;
+            }
+            const enhanced = await enhancePrompt(currentPrompt);
+            promptInput.value = enhanced;
+        });
+
+        // Event Listener for Random Button
+        randomPromptBtn.addEventListener('click', () => {
+            const randomIndex = Math.floor(Math.random() * randomPrompts.length);
+            promptInput.value = randomPrompts[randomIndex];
+        });
+    </script>
 </body>
 </html>
