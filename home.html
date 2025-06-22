@@ -1,602 +1,222 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FeelImage</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        // Using 'Inter' as specified in previous instructions, or fallbacks
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
-                    },
-                    colors: {
-                        'purple-start': '#8A2BE2', // Blue Violet
-                        'pink-end': '#FF69B4',     // Hot Pink
-                        'gray-bg-light': '#F8F8F8', // Lighter background for some elements
-                        'dark-text': '#333333',     // Darker text for better contrast
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(to bottom right, #ffffff, #F3E5F5); /* Soft white to very light purple for background */
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem; /* Added padding for smaller screens */
-        }
+import React, { useState } from 'react';
 
-        .gradient-text {
-            background: linear-gradient(to right, var(--tw-gradient-stops));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+// Main App component
+const App = () => {
+    // State variables
+    const [prompt, setPrompt] = useState(''); // Stores the user's text prompt
+    const [images, setImages] = useState([]); // Stores the base64 encoded image URLs
+    const [loading, setLoading] = useState(false); // Indicates if images are being generated
+    const [errorMessage, setErrorMessage] = useState(''); // Stores any error messages
+    const [imageStyle, setImageStyle] = useState('Auto'); // Stores the selected image style
+    const [aspectRatio, setAspectRatio] = useState('1:1'); // Stores the selected aspect ratio
 
-        /* Custom active state for aspect ratio buttons */
-        .aspect-ratio-btn.active {
-            background: linear-gradient(to right, #8A2BE2, #FF69B4);
-            color: white;
-            box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3); /* Soft shadow */
-            border-color: transparent; /* Remove border when active */
-        }
+    // Function to handle image generation
+    const generateImages = async () => {
+        setLoading(true); // Set loading to true to show indicator
+        setImages([]); // Clear previous images
+        setErrorMessage(''); // Clear previous error messages
 
-        .image-placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #E0E0E0; /* Lighter grey for placeholder */
-            border-radius: 0.75rem; /* rounded-xl */
-            min-height: 200px;
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        /* Modal specific styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
-        }
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 1rem; /* More rounded */
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* Stronger shadow */
-            max-width: 90%;
-            width: 550px; /* Slightly wider */
-            max-height: 85vh; /* Taller */
-            overflow-y: auto;
-            position: relative;
-            transform: translateY(-20px);
-            transition: transform 0.3s ease-out;
-        }
-        .modal-overlay.show .modal-content {
-            transform: translateY(0);
-        }
-        .modal-close-btn {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.8rem; /* Larger close button */
-            cursor: pointer;
-            color: #777; /* Softer color */
-            transition: color 0.2s ease-in-out;
-        }
-        .modal-close-btn:hover {
-            color: #333;
-        }
-
-        /* Custom scrollbar for modals (optional, but good for aesthetics) */
-        .modal-content::-webkit-scrollbar {
-            width: 8px;
-        }
-        .modal-content::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        .modal-content::-webkit-scrollbar-thumb {
-            background: #ddd;
-            border-radius: 10px;
-        }
-        .modal-content::-webkit-scrollbar-thumb:hover {
-            background: #bbb;
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-white to-purple-50 p-4 min-h-screen flex items-center justify-center">
-    <div class="container mx-auto max-w-5xl bg-white rounded-3xl shadow-2xl p-6 md:p-10 my-8 border border-gray-100">
-        <!-- Header -->
-        <header class="text-center mb-10">
-            <h1 class="text-6xl md:text-7xl font-extrabold gradient-text from-purple-start to-pink-end inline-block drop-shadow-lg">
-                FeelImage
-            </h1>
-            <p class="text-gray-700 text-lg md:text-xl mt-3 max-w-2xl mx-auto">Unleash your imagination into stunning visuals with AI.</p>
-        </header>
-
-        <!-- Main Content Area -->
-        <main class="space-y-8">
-            <!-- Prompt Input Section -->
-            <div>
-                <label for="prompt-input" class="block text-dark-text text-xl font-semibold mb-3">What do you want to create?</label>
-                <textarea id="prompt-input" rows="5"
-                          class="w-full p-4 md:p-5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition duration-300 ease-in-out shadow-inner text-lg text-gray-800 placeholder-gray-500"
-                          placeholder="Describe your image in detail: e.g., 'A mystical forest at dawn, with luminous flora and a waterfall, high fantasy, detailed, vibrant colors'..."></textarea>
-
-                <div class="flex flex-col sm:flex-row justify-center sm:justify-end gap-3 mt-4">
-                    <button id="enhance-prompt-btn"
-                            class="flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-full text-md shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2">
-                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
-                        Enhance Prompt
-                    </button>
-                    <button id="get-prompt-ideas-btn"
-                            class="flex items-center justify-center bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-full text-md shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2">
-                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 8.293a1 1 0 011.414 0l.001.001A1 1 0 0118.001 10H16.5a.5.5 0 00-.5.5v2.5a.5.5 0 00.5.5h.793a1 1 0 01.707 1.707l-.001.001a1 1 0 01-1.414 0L16 14.414l-2.293 2.293a1 1 0 01-1.414 0l-.001-.001a1 1 0 010-1.414L14.586 13l-2.293-2.293a1 1 0 010-1.414l.001-.001a1 1 0 011.414 0L16 11.586l2.293-2.293a1 1 0 011.414 0l.001-.001zM4 10a1 1 0 01-1 1H2a1 1 0 010-2h1a1 1 0 011 1zM2 14a1 1 0 01-1 1H0a1 1 0 010-2h1a1 1 0 011 1zM4 6a1 1 0 01-1 1H2a1 1 0 010-2h1a1 1 0 011 1zM10 2a1 1 0 011 1v1a1 1 0 01-2 0V3a1 1 0 011-1zM6 18a1 1 0 01-1 1H4a1 1 0 010-2h1a1 1 0 011 1zM10 18a1 1 0 01-1 1H8a1 1 0 010-2h1a1 1 0 011 1zM14 6a1 1 0 01-1 1h-1a1 1 0 010-2h1a1 1 0 011 1z" clip-rule="evenodd"></path></svg>
-                        Get Prompt Ideas
-                    </button>
-                </div>
-            </div>
-
-            <!-- Style and Aspect Ratio Section -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Style Selection -->
-                <div>
-                    <label for="style-select" class="block text-dark-text text-xl font-semibold mb-3">Image Style:</label>
-                    <div class="relative">
-                        <select id="style-select"
-                                class="block appearance-none w-full bg-gray-bg-light border border-gray-300 text-gray-800 py-3 px-5 pr-10 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-300 shadow-md transition duration-200 ease-in-out text-lg">
-                            <option value="Auto">Auto (Let AI decide)</option>
-                            <option value="Realistic">Realistic Photo</option>
-                            <option value="Digital Art">Digital Art</option>
-                            <option value="Painting">Classic Painting</option>
-                            <option value="Anime">Anime Style</option>
-                            <option value="3D Render">3D Render</option>
-                            <option value="Minimalist">Minimalist Design</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-700">
-                            <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9z"/></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Aspect Ratio Buttons -->
-                <div>
-                    <label class="block text-dark-text text-xl font-semibold mb-3">Aspect Ratio:</label>
-                    <div class="flex flex-wrap gap-4">
-                        <button id="ratio-1-1" data-ratio="1:1"
-                                class="aspect-ratio-btn flex-1 min-w-[120px] py-3 px-6 rounded-xl border border-gray-300 text-gray-700 font-semibold text-lg hover:border-purple-400 hover:text-purple-700 transition duration-200 ease-in-out shadow-md active">
-                            1:1 <span class="text-sm text-gray-500">(Square)</span>
-                        </button>
-                        <button id="ratio-16-9" data-ratio="16:9"
-                                class="aspect-ratio-btn flex-1 min-w-[120px] py-3 px-6 rounded-xl border border-gray-300 text-gray-700 font-semibold text-lg hover:border-purple-400 hover:text-purple-700 transition duration-200 ease-in-out shadow-md">
-                            16:9 <span class="text-sm text-gray-500">(Landscape)</span>
-                        </button>
-                        <button id="ratio-9-16" data-ratio="9:16"
-                                class="aspect-ratio-btn flex-1 min-w-[120px] py-3 px-6 rounded-xl border border-gray-300 text-gray-700 font-semibold text-lg hover:border-purple-400 hover:text-purple-700 transition duration-200 ease-in-out shadow-md">
-                            9:16 <span class="text-sm text-gray-500">(Portrait)</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Generate Button -->
-            <div class="text-center pt-6">
-                <button id="generate-btn"
-                        class="bg-gradient-to-r from-purple-start to-pink-end text-white font-bold py-4 px-12 rounded-full text-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-purple-400 focus:ring-offset-2">
-                    Generate Images
-                    <svg class="inline-block ml-3 w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-                </button>
-            </div>
-
-            <!-- Loading Indicator -->
-            <div id="loading-indicator" class="hidden text-center mt-8 p-4 bg-purple-50 rounded-lg shadow-inner">
-                <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-t-4 border-purple-600 border-opacity-75"></div>
-                <p class="text-purple-800 text-xl font-medium mt-3">Crafting your vision...</p>
-            </div>
-
-            <!-- Image Display Area -->
-            <div id="image-gallery" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mt-8">
-                <!-- Initial Image placeholders -->
-                <div class="image-placeholder"></div>
-                <div class="image-placeholder"></div>
-                <div class="image-placeholder"></div>
-                <div class="image-placeholder"></div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Custom Alert/Message Box -->
-    <div id="user-message-box" class="modal-overlay">
-        <div class="modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <p id="user-message-text" class="text-xl font-semibold text-gray-800 mb-4"></p>
-            <button class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-5 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition duration-200 ease-in-out">OK</button>
-        </div>
-    </div>
-
-    <!-- Prompt Ideas Modal -->
-    <div id="prompt-ideas-modal-overlay" class="modal-overlay">
-        <div class="modal-content">
-            <button class="modal-close-btn">&times;</button>
-            <h3 class="text-3xl font-bold text-gray-800 mb-6 text-center">Inspiration Awaits!</h3>
-            <ul id="prompt-ideas-list" class="space-y-4">
-                <!-- Ideas will be inserted here -->
-            </ul>
-        </div>
-    </div>
-
-    <script type="module">
-        // Global variables for Firebase configuration (provided by the environment)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // API Key for Gemini API calls (empty string to be populated by Canvas runtime)
-        const apiKey = "";
-
-        // Elements
-        const promptInput = document.getElementById('prompt-input');
-        const styleSelect = document.getElementById('style-select');
-        const aspectRatioButtons = document.querySelectorAll('.aspect-ratio-btn');
-        const generateBtn = document.getElementById('generate-btn');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const imageGallery = document.getElementById('image-gallery');
-        const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
-        const getPromptIdeasBtn = document.getElementById('get-prompt-ideas-btn');
-
-        const userMessageBox = document.getElementById('user-message-box');
-        const userMessageText = document.getElementById('user-message-text');
-        const userMessageBoxOkBtn = userMessageBox.querySelector('button');
-
-        const promptIdeasModalOverlay = document.getElementById('prompt-ideas-modal-overlay');
-        const promptIdeasList = document.getElementById('prompt-ideas-list');
-
-
-        // State variables
-        let selectedAspectRatio = '1:1'; // Default aspect ratio
-
-        // Initialize aspect ratio button active state
-        document.getElementById('ratio-1-1').classList.add('active');
-
-        // Event Listeners
-        aspectRatioButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Remove active class from all buttons and add to the clicked one
-                aspectRatioButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                selectedAspectRatio = button.dataset.ratio;
-                console.log('Selected Aspect Ratio:', selectedAspectRatio);
-            });
-        });
-
-        generateBtn.addEventListener('click', generateImages);
-        enhancePromptBtn.addEventListener('click', enhancePrompt);
-        getPromptIdeasBtn.addEventListener('click', getPromptIdeas);
-
-        // Event listener for the custom alert box's OK button
-        userMessageBoxOkBtn.addEventListener('click', () => {
-            userMessageBox.classList.remove('show');
-        });
-        // Close modal if clicking outside the content
-        userMessageBox.addEventListener('click', (e) => {
-            if (e.target === userMessageBox) {
-                userMessageBox.classList.remove('show');
-            }
-        });
-        userMessageBox.querySelector('.modal-close-btn').addEventListener('click', () => {
-            userMessageBox.classList.remove('show');
-        });
-
-
-        // Event listener for the prompt ideas modal's close button
-        promptIdeasModalOverlay.querySelector('.modal-close-btn').addEventListener('click', () => {
-            promptIdeasModalOverlay.classList.remove('show');
-        });
-        // Close modal if clicking outside the content
-        promptIdeasModalOverlay.addEventListener('click', (e) => {
-            if (e.target === promptIdeasModalOverlay) {
-                promptIdeasModalOverlay.classList.remove('show');
-            }
-        });
-
-
-        /**
-         * Clears all images from the gallery and shows placeholders.
-         */
-        function clearAndShowPlaceholders() {
-            imageGallery.innerHTML = `
-                <div class="image-placeholder"></div>
-                <div class="image-placeholder"></div>
-                <div class="image-placeholder"></div>
-                <div class="image-placeholder"></div>
-            `;
-        }
-
-        /**
-         * Generates images based on the user's prompt, style, and aspect ratio.
-         */
-        async function generateImages() {
-            const prompt = promptInput.value.trim();
-            const style = styleSelect.value;
-
-            if (!prompt) {
-                alertUserMessage('Please enter a descriptive prompt to generate images.');
+        try {
+            // Check if the prompt is empty
+            if (!prompt.trim()) {
+                setErrorMessage('Please enter a prompt to generate images.');
+                setLoading(false);
                 return;
             }
 
-            // Show loading indicator
-            loadingIndicator.classList.remove('hidden');
-            generateBtn.disabled = true; // Disable button during generation
-            enhancePromptBtn.disabled = true; // Disable LLM buttons
-            getPromptIdeasBtn.disabled = true;
-            clearAndShowPlaceholders(); // Clear previous images and show placeholders
+            // Determine width and height based on aspect ratio
+            let width, height;
+            switch (aspectRatio) {
+                case '1:1':
+                    width = 1024;
+                    height = 1024;
+                    break;
+                case '16:9':
+                    width = 1024;
+                    height = 576;
+                    break;
+                case '9:16':
+                    width = 576;
+                    height = 1024;
+                    break;
+                default:
+                    width = 1024;
+                    height = 1024;
+            }
 
-            // Construct the full prompt with style
-            const fullPrompt = style === 'Auto' ? prompt : `${prompt}, in ${style} style`;
+            // Construct the full prompt, including the selected style if not 'Auto'
+            const fullPrompt = imageStyle === 'Auto' ? prompt : `${prompt}, ${imageStyle}`;
 
+            // Construct the payload for the image generation API call
             const payload = {
-                instances: {
-                    prompt: fullPrompt,
-                    aspectRatio: selectedAspectRatio,
-                },
+                instances: { prompt: fullPrompt },
                 parameters: {
-                    sampleCount: 4 // Generate 4 images at a time
+                    sampleCount: 4, // Generate 4 images as requested
+                    width: width,
+                    height: height,
                 }
             };
 
-            // Removed `?key=${apiKey}` from the URL
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`;
+            // The API key is left as an empty string; Canvas will provide it at runtime for imagen-3.0-generate-002
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
 
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+            // Make the API call
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            // Parse the JSON response
+            const result = await response.json();
+
+            // Check if images were successfully generated
+            if (result.predictions && result.predictions.length > 0) {
+                const generatedImageUrls = result.predictions.map(prediction => {
+                    // Prepend the base64 prefix to display the image
+                    return `data:image/png;base64,${prediction.bytesBase64Encoded}`;
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`API Error: ${response.status} - ${errorData.error ? errorData.error.message : 'Unknown error'}`);
-                }
-
-                const result = await response.json();
-
-                if (result.predictions && result.predictions.length > 0) {
-                    imageGallery.innerHTML = ''; // Clear placeholders
-                    result.predictions.forEach(prediction => {
-                        if (prediction.bytesBase64Encoded) {
-                            const imageUrl = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
-                            const imgContainer = document.createElement('div');
-                            imgContainer.className = 'rounded-xl overflow-hidden shadow-lg bg-gray-100 flex items-center justify-center aspect-w-1 aspect-h-1'; // Added aspect ratio for consistent sizing
-                            const img = document.createElement('img');
-                            img.src = imageUrl;
-                            img.alt = prompt;
-                            img.className = 'w-full h-full object-cover rounded-xl transition duration-300 ease-in-out transform hover:scale-105'; // Scale on hover
-                            imgContainer.appendChild(img);
-                            imageGallery.appendChild(imgContainer);
-                        }
-                    });
-                } else {
-                    alertUserMessage('No images were generated. Please try a different prompt or adjust the style/aspect ratio.');
-                    imageGallery.innerHTML = '<p class="text-center text-gray-500 col-span-full py-10">No images generated. Try again with a different prompt!</p>';
-                }
-
-            } catch (error) {
-                console.error('Error generating images:', error);
-                alertUserMessage(`Failed to generate images: ${error.message}. Please check your prompt and try again.`);
-                imageGallery.innerHTML = '<p class="text-center text-red-500 col-span-full py-10">Error generating images. Please check your console for details.</p>';
-            } finally {
-                // Hide loading indicator
-                loadingIndicator.classList.add('hidden');
-                generateBtn.disabled = false; // Re-enable button
-                enhancePromptBtn.disabled = false; // Re-enable LLM buttons
-                getPromptIdeasBtn.disabled = false;
-            }
-        }
-
-        /**
-         * Enhances the current prompt using the Gemini API.
-         */
-        async function enhancePrompt() {
-            const currentPrompt = promptInput.value.trim();
-            if (!currentPrompt) {
-                alertUserMessage('Please enter a prompt in the text area before enhancing.');
-                return;
-            }
-
-            setLlmLoading(true, enhancePromptBtn, 'Enhancing...');
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: `Elaborate and make more descriptive the following image generation prompt, focusing on vivid visual details, mood, and potential composition, without adding a specific art style or aspect ratio: "${currentPrompt}". Ensure the enhanced prompt is at least 50 words long.` }] });
-            const payload = { contents: chatHistory };
-            // Removed `?key=${apiKey}` from the URL
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Gemini API Error: ${response.status} - ${errorData.error ? errorData.error.message : 'Unknown error'}`);
-                }
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const enhancedText = result.candidates[0].content.parts[0].text;
-                    promptInput.value = enhancedText;
-                    alertUserMessage('Prompt enhanced successfully!');
-                } else {
-                    alertUserMessage('Could not enhance prompt. The AI might not have generated a suitable response. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error enhancing prompt:', error);
-                alertUserMessage(`Failed to enhance prompt: ${error.message}.`);
-            } finally {
-                setLlmLoading(false, enhancePromptBtn, 'Enhance Prompt');
-            }
-        }
-
-        /**
-         * Gets prompt ideas from the Gemini API and displays them in a modal.
-         */
-        async function getPromptIdeas() {
-            setLlmLoading(true, getPromptIdeasBtn, 'Getting Ideas...');
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: "Generate 5 diverse, highly imaginative, and visually descriptive image generation prompts. Each prompt should be a single, detailed sentence. Provide them as a JSON array of strings, e.g., ['prompt1', 'prompt2', ...]." }] });
-            const payload = {
-                contents: chatHistory,
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "ARRAY",
-                        items: { "type": "STRING" }
-                    }
-                }
-            };
-            // Removed `?key=${apiKey}` from the URL
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Gemini API Error: ${response.status} - ${errorData.error ? errorData.error.message : 'Unknown error'}`);
-                }
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const jsonString = result.candidates[0].content.parts[0].text;
-                    const ideas = JSON.parse(jsonString);
-                    displayPromptIdeasModal(ideas);
-                } else {
-                    alertUserMessage('Could not get prompt ideas. The AI might not have generated a suitable response. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error getting prompt ideas:', error);
-                alertUserMessage(`Failed to get prompt ideas: ${error.message}.`);
-            } finally {
-                setLlmLoading(false, getPromptIdeasBtn, 'Get Prompt Ideas');
-            }
-        }
-
-        /**
-         * Displays a modal with prompt ideas.
-         * @param {Array<string>} ideas - An array of prompt strings.
-         */
-        function displayPromptIdeasModal(ideas) {
-            promptIdeasList.innerHTML = ''; // Clear previous ideas
-
-            if (ideas && ideas.length > 0) {
-                ideas.forEach((idea, index) => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-purple-100 transition duration-150 ease-in-out text-gray-800 text-base border border-gray-200 shadow-sm hover:shadow-md';
-                    listItem.textContent = `${index + 1}. ${idea}`;
-                    listItem.addEventListener('click', () => {
-                        promptInput.value = idea;
-                        promptIdeasModalOverlay.classList.remove('show');
-                        alertUserMessage('Prompt selected!');
-                    });
-                    promptIdeasList.appendChild(listItem);
-                });
+                setImages(generatedImageUrls); // Update the state with generated images
             } else {
-                promptIdeasList.innerHTML = '<p class="text-gray-600 text-center py-4">No ideas generated at this time.</p>';
+                setErrorMessage('No images were generated. Please try a different prompt.');
             }
-
-            promptIdeasModalOverlay.classList.add('show'); // Show the modal
+        } catch (error) {
+            console.error('Error generating images:', error);
+            setErrorMessage('Failed to generate images. Please try again later.');
+        } finally {
+            setLoading(false); // Set loading to false once operation is complete
         }
+    };
 
-        /**
-         * Handles loading state for LLM buttons.
-         * @param {boolean} isLoading - Whether the LLM operation is in progress.
-         * @param {HTMLElement} buttonElement - The button to manage state for.
-         * @param {string} originalText - The original text content of the button.
-         */
-        function setLlmLoading(isLoading, buttonElement, originalText) {
-            const spinnerHtml = `<div class="animate-spin rounded-full h-5 w-5 border-2 border-t-2 border-white border-opacity-75 mr-2"></div>`;
-            if (isLoading) {
-                buttonElement.disabled = true;
-                buttonElement.innerHTML = `${spinnerHtml} ${originalText.replace(/^(✨\s)?/, '')}`; // Remove emoji if present
-                // Disable other LLM button as well
-                if (buttonElement.id === 'enhance-prompt-btn') {
-                    getPromptIdeasBtn.disabled = true;
-                } else if (buttonElement.id === 'get-prompt-ideas-btn') {
-                    enhancePromptBtn.disabled = true;
-                }
-                generateBtn.disabled = true; // Disable main generate button
-            } else {
-                buttonElement.disabled = false;
-                if (buttonElement.id === 'enhance-prompt-btn') {
-                    buttonElement.innerHTML = `✨ ${originalText}`;
-                } else if (buttonElement.id === 'get-prompt-ideas-btn') {
-                    buttonElement.innerHTML = `✨ ${originalText}`;
-                }
-                // Re-enable other LLM button if it wasn't the one clicked and if main generation isn't active
-                if (!loadingIndicator.classList.contains('hidden')) { // Check if image generation loading is active
-                    // If image generation is still active, keep all disabled
-                } else {
-                    if (buttonElement.id === 'enhance-prompt-btn') {
-                        getPromptIdeasBtn.disabled = false;
-                    } else if (buttonElement.id === 'get-prompt-ideas-btn') {
-                        enhancePromptBtn.disabled = false;
-                    }
-                    generateBtn.disabled = false; // Re-enable main generate button
-                }
-            }
-        }
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-800 via-blue-900 to-indigo-950 text-white font-inter flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+            <div className="max-w-4xl w-full bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-2xl shadow-xl p-6 sm:p-8 lg:p-10 border border-purple-400 border-opacity-30">
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-center mb-6 sm:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300">
+                    Dream Weaver AI
+                </h1>
+                <p className="text-lg text-center mb-8 text-purple-200">
+                    Unleash your creativity. Describe your vision, and we'll conjure it into reality.
+                </p>
 
-        /**
-         * Custom alert message box instead of alert().
-         * @param {string} message - The message to display.
-         */
-        function alertUserMessage(message) {
-            userMessageText.textContent = message;
-            userMessageBox.classList.add('show');
-        }
-    </script>
-</body>
-</html>
+                <div className="mb-8">
+                    <textarea
+                        className="w-full p-4 text-lg text-gray-800 bg-white bg-opacity-90 rounded-xl border-2 border-purple-500 focus:ring-4 focus:ring-purple-300 focus:border-transparent transition-all duration-300 shadow-inner resize-y min-h-[100px]"
+                        placeholder="Enter your vivid description here (e.g., 'A futuristic city at sunset, neon lights reflecting on wet streets, flying cars, cyberpunk style, highly detailed')..."
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        rows="4"
+                    ></textarea>
+                </div>
+
+                {/* Style Selection Dropdown */}
+                <div className="mb-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <label htmlFor="imageStyle" className="text-lg text-purple-200">Image Style:</label>
+                    <select
+                        id="imageStyle"
+                        className="p-3 text-lg text-gray-800 bg-white bg-opacity-90 rounded-xl border-2 border-purple-500 focus:ring-4 focus:ring-purple-300 focus:border-transparent transition-all duration-300 shadow-inner"
+                        value={imageStyle}
+                        onChange={(e) => setImageStyle(e.target.value)}
+                    >
+                        <option value="Auto">Auto</option>
+                        <option value="Realistic">Realistic</option>
+                        <option value="Digital Art">Digital Art</option>
+                        <option value="Painting">Painting</option>
+                        <option value="Anime">Anime</option>
+                        <option value="3D Render">3D Render</option>
+                        <option value="Minimalist">Minimalist</option>
+                    </select>
+                </div>
+
+                {/* Aspect Ratio Buttons */}
+                <div className="mb-8 flex flex-col items-center">
+                    <span className="text-lg text-purple-200 mb-3">Aspect Ratio:</span>
+                    <div className="flex gap-4">
+                        {['1:1', '16:9', '9:16'].map((ratio) => (
+                            <button
+                                key={ratio}
+                                onClick={() => setAspectRatio(ratio)}
+                                className={`px-6 py-2 rounded-lg text-lg font-medium transition-all duration-200
+                                    ${aspectRatio === ratio
+                                        ? 'bg-purple-600 text-white shadow-md'
+                                        : 'bg-white bg-opacity-20 text-purple-100 hover:bg-opacity-30'
+                                    }
+                                    focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75`}
+                            >
+                                {ratio}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex justify-center mb-8">
+                    <button
+                        onClick={generateImages}
+                        disabled={loading}
+                        className={`px-8 py-3 rounded-full text-xl font-semibold transition-all duration-300 transform
+                            ${loading
+                                ? 'bg-gray-600 cursor-not-allowed animate-pulse'
+                                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 shadow-lg hover:shadow-2xl'
+                            }
+                            focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75`}
+                    >
+                        {loading ? (
+                            <span className="flex items-center">
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Generating Dreams...
+                            </span>
+                        ) : (
+                            'Generate Images'
+                        )}
+                    </button>
+                </div>
+
+                {errorMessage && (
+                    <div className="bg-red-500 text-white p-4 rounded-xl mb-6 text-center shadow-md">
+                        {errorMessage}
+                    </div>
+                )}
+
+                {images.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+                        {images.map((image, index) => (
+                            <div key={index} className="bg-white bg-opacity-15 p-4 rounded-xl shadow-lg border border-purple-400 border-opacity-40 transform hover:scale-105 transition-transform duration-300">
+                                <img
+                                    src={image}
+                                    alt={`Generated Image ${index + 1}`}
+                                    className="w-full h-auto rounded-lg object-cover shadow-md"
+                                    onError={(e) => {
+                                        // Fallback for broken images
+                                        e.target.onerror = null;
+                                        e.target.src = "https://placehold.co/400x300/6A0DAD/ffffff?text=Image+Failed+to+Load";
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {images.length === 0 && !loading && !errorMessage && (
+                    <div className="text-center text-purple-300 text-lg mt-8 p-6 bg-white bg-opacity-10 rounded-xl border border-purple-400 border-opacity-30">
+                        Your generated images will appear here. Start by typing a prompt above!
+                    </div>
+                )}
+
+            </div>
+            {/* Tailwind CSS Script for compilation */}
+            <script src="https://cdn.tailwindcss.com"></script>
+            {/* Styles for the font import, embedded using dangerouslySetInnerHTML for React compatibility */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+                body {
+                    font-family: 'Inter', sans-serif;
+                }
+            `}} />
+        </div>
+    );
+};
+
+export default App;
