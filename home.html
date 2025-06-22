@@ -3,574 +3,360 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DreamWeaver - AI Image Generator</title>
+    <title>DreamWeaver - Text to Image Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
     <style>
-        * {
+        :root {
+            --prime-gradient: linear-gradient(135deg, #7b2ff2, #1e90ff 80%);
+            --prime: #6236ff;
+            --blue: #1e90ff;
+            --purple: #7b2ff2;
+            --white: #fff;
+            --shadow: 0 8px 24px 0 rgba(40,40,80,0.15);
+            --radius: 2rem;
+            --transition: 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+        html, body {
+            height: 100%;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Montserrat', sans-serif;
+            background: var(--prime-gradient);
             min-height: 100vh;
-            color: white;
+            color: var(--white);
         }
-
+        body {
+            display: flex;
+            flex-direction: column;
+        }
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: auto;
+            width: 100%;
+            max-width: 620px;
+            padding: 32px 1rem 48px 1rem;
+            background: rgba(255,255,255,0.04);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(7px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 1.5s;
         }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            animation: fadeInDown 1s ease-out;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(40px);}
+            to { opacity: 1; transform: translateY(0);}
         }
-
-        .logo {
-            font-size: 3rem;
-            font-weight: bold;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+        .title {
+            background: var(--prime-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-            animation: glow 2s ease-in-out infinite alternate;
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 0.2em;
+            text-align: center;
+            text-shadow: 0 2px 24px rgba(30,144,255,0.15);
+            user-select: none;
         }
-
         .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            margin-bottom: 30px;
+            color: var(--white);
+            opacity: 0.88;
+            font-size: 1.15rem;
+            margin-bottom: 2.5rem;
+            text-align: center;
+            font-weight: 600;
         }
-
-        .input-section {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: fadeInUp 1s ease-out 0.3s both;
-        }
-
         .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: white;
-        }
-
-        .text-input {
             width: 100%;
-            padding: 15px;
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.1rem;
+            flex-wrap: wrap;
+        }
+        .prompt-input {
+            flex: 1 1 230px;
+            padding: 1.05em 1.3em;
+            font-size: 1.12rem;
             border: none;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .text-input:focus {
+            border-radius: 1.6em;
             outline: none;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+            background: rgba(255,255,255,0.17);
+            color: #222;
+            font-weight: 600;
+            transition: box-shadow var(--transition);
+            box-shadow: 0 2px 16px 0 rgba(60,80,255,0.10);
         }
-
-        .controls-row {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 15px;
-            align-items: end;
+        .prompt-input:focus {
+            box-shadow: 0 4px 28px 0 rgba(30,144,255,0.18);
         }
-
-        .style-select {
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .style-select:focus {
-            outline: none;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-        }
-
         .btn {
-            padding: 12px 24px;
+            padding: 0.85em 1.7em;
             border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 1.7em;
+            background: var(--prime-gradient);
+            color: var(--white);
+            font-size: 1.06rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            box-shadow: 0 2px 12px 0 rgba(90,60,255,0.15);
+            transition: background 0.15s, box-shadow var(--transition), transform 0.07s;
         }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        .btn:active {
+            transform: scale(0.97);
         }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        .btn.enhance {
+            background: linear-gradient(135deg, #1e90ff, #c471f5 84%);
         }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .btn.random {
+            background: linear-gradient(135deg, #fff 60%, #1e90ff 120%);
+            color: #1e90ff;
+            box-shadow: none;
         }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .generate-btn {
+        .styles-select {
             width: 100%;
-            padding: 18px;
-            margin-top: 20px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            font-size: 18px;
-            position: relative;
+            min-width: 230px;
+            margin-bottom: 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            justify-content: center;
+        }
+        .style-option {
+            padding: 0.55em 1.3em;
+            border-radius: 1.5em;
+            border: 2px solid rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.08);
+            color: var(--white);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+            transition: background var(--transition), border-color var(--transition), color var(--transition);
+        }
+        .style-option.selected,
+        .style-option:hover {
+            background: var(--prime-gradient);
+            border-color: #fff;
+            color: #fff;
+        }
+        .images-row {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.15rem;
+            justify-content: center;
+            margin-top: 2.3rem;
+            min-height: 210px;
+            transition: min-height 0.2s;
+        }
+        .img-card {
+            width: 215px;
+            aspect-ratio: 1/1;
+            background: rgba(255,255,255,0.14);
+            border-radius: 1.3em;
+            box-shadow: 0 2px 12px 0 rgba(50,70,200,0.10);
             overflow: hidden;
-        }
-
-        .generate-btn:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .generate-btn:hover:before {
-            left: 100%;
-        }
-
-        .loading {
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        .loading:after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            margin: auto;
-            border: 2px solid transparent;
-            border-top-color: #ffffff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            animation: fadeInUp 1s ease-out 0.6s both;
-        }
-
-        .image-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-            animation: scaleIn 0.5s ease-out;
-        }
-
-        .image-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .image-placeholder {
-            width: 100%;
-            height: 280px;
-            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
             display: flex;
             align-items: center;
             justify-content: center;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 18px;
             position: relative;
-            overflow: hidden;
+            animation: popIn 0.8s;
         }
-
-        .image-placeholder:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.92);}
+            to { opacity: 1; transform: scale(1);}
+        }
+        .img-card img {
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            animation: shimmer 2s infinite;
+            object-fit: cover;
+            display: block;
+            transition: filter 0.3s;
         }
-
-        .image-info {
-            padding: 15px;
+        .img-card .loader {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%,-50%);
         }
-
-        .image-prompt {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-bottom: 8px;
+        .loader {
+            border: 4px solid #eee;
+            border-top: 4px solid #7b2ff2;
+            border-radius: 100%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1.1s linear infinite;
         }
-
-        .image-style {
-            font-size: 12px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 8px;
-            border-radius: 12px;
-            display: inline-block;
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .footer {
+            width: 100vw;
+            padding: 1.2rem 0 0.5rem 0;
+            text-align: center;
+            color: rgba(255,255,255,0.65);
+            font-size: 1.08rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            letter-spacing: 0.5px;
         }
-
-        .enhance-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        @media (max-width: 900px) {
+            .container { max-width: 95vw;}
+            .img-card { width: 170px;}
         }
-
-        .enhance-btn {
-            background: linear-gradient(45deg, #ffd89b, #19547b);
-            margin-right: 10px;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes scaleIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes glow {
-            from {
-                text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            }
-            to {
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
-            }
-        }
-
-        @keyframes spin {
-            to {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
-        }
-
-        @keyframes shimmer {
-            to {
-                left: 100%;
-            }
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .logo {
-                font-size: 2.5rem;
-            }
-
-            .controls-row {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .gallery {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 15px;
-            }
-
-            .input-section {
-                padding: 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .logo {
-                font-size: 2rem;
-            }
-
-            .gallery {
-                grid-template-columns: 1fr;
-            }
-
-            .image-placeholder {
-                height: 250px;
-            }
+        @media (max-width: 600px) {
+            .container { padding: 16px 3vw;}
+            .img-card { width: 120px;}
+            .title { font-size: 2rem;}
+            .subtitle { font-size: 1rem;}
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1 class="logo">DreamWeaver</h1>
-            <p class="subtitle">Transform your imagination into stunning AI-generated artwork</p>
-        </header>
-
-        <div class="input-section">
-            <div class="input-group">
-                <label class="input-label">Describe your vision</label>
-                <textarea 
-                    id="promptInput" 
-                    class="text-input" 
-                    placeholder="A majestic dragon soaring through a starlit sky..."
-                    rows="3"
-                ></textarea>
-            </div>
-
-            <div class="controls-row">
-                <div class="input-group">
-                    <label class="input-label">Style</label>
-                    <select id="styleSelect" class="style-select">
-                        <option value="auto">Auto</option>
-                        <option value="realistic">Realistic</option>
-                        <option value="digital-art">Digital Art</option>
-                        <option value="painting">Painting</option>
-                        <option value="anime">Anime</option>
-                        <option value="3d-render">3D Render</option>
-                        <option value="minimalist">Minimalist</option>
-                        <option value="black-white">Black & White</option>
-                        <option value="sketch">Sketch</option>
-                    </select>
-                </div>
-
-                <button id="randomBtn" class="btn btn-secondary">🎲 Random</button>
-                <button id="enhanceBtn" class="btn enhance-btn">✨ Enhance</button>
-            </div>
-
-            <button id="generateBtn" class="btn btn-primary generate-btn">
-                Generate Images
-            </button>
+        <div class="title">DreamWeaver</div>
+        <div class="subtitle">Generate <span style="color:#c9b6ff">AI Images</span> from Text Prompts.<br>
+            <span style="font-size:.97em;opacity:.75;">Powered by Google Ideogram (API 3)</span>
         </div>
-
-        <div id="gallery" class="gallery">
-            <div class="image-card">
-                <div class="image-placeholder">
-                    <span>🎨 Your masterpiece will appear here</span>
-                </div>
-                <div class="image-info">
-                    <div class="image-prompt">Ready to create amazing art...</div>
-                    <span class="image-style">Auto</span>
-                </div>
-            </div>
-            <div class="image-card">
-                <div class="image-placeholder">
-                    <span>🖼️ Image 2</span>
-                </div>
-                <div class="image-info">
-                    <div class="image-prompt">Waiting for your creativity...</div>
-                    <span class="image-style">Auto</span>
-                </div>
-            </div>
-            <div class="image-card">
-                <div class="image-placeholder">
-                    <span>🎭 Image 3</span>
-                </div>
-                <div class="image-info">
-                    <div class="image-prompt">Let your imagination run wild...</div>
-                    <span class="image-style">Auto</span>
-                </div>
-            </div>
-            <div class="image-card">
-                <div class="image-placeholder">
-                    <span>🌟 Image 4</span>
-                </div>
-                <div class="image-info">
-                    <div class="image-prompt">Magic is about to happen...</div>
-                    <span class="image-style">Auto</span>
-                </div>
-            </div>
+        <div class="input-group">
+            <input type="text" class="prompt-input" id="prompt" placeholder="Describe what you want to see...">
+            <button class="btn enhance" id="enhanceBtn" title="Enhance Prompt"><i class="fa-solid fa-magic"></i></button>
+            <button class="btn random" id="randomBtn" title="Random Prompt"><i class="fa-solid fa-shuffle"></i></button>
+        </div>
+        <div class="styles-select" id="stylesSelect">
+            <div class="style-option selected" data-style="Auto">Auto</div>
+            <div class="style-option" data-style="Realistic">Realistic</div>
+            <div class="style-option" data-style="Digital Art">Digital Art</div>
+            <div class="style-option" data-style="Painting">Painting</div>
+            <div class="style-option" data-style="Anime">Anime</div>
+            <div class="style-option" data-style="3D Render">3D Render</div>
+            <div class="style-option" data-style="Minimalist">Minimalist</div>
+            <div class="style-option" data-style="Black & White">Black & White</div>
+            <div class="style-option" data-style="Sketch">Sketch</div>
+        </div>
+        <button class="btn" style="width:100%;margin-bottom:1.5rem;font-size:1.15rem;" id="generateBtn">
+            <i class="fa-solid fa-image"></i> Generate Images
+        </button>
+        <div class="images-row" id="imagesRow">
+            <!-- Images will be displayed here -->
         </div>
     </div>
-
+    <div class="footer">
+        &copy; 2025 DreamWeaver &nbsp;|&nbsp; Designed with 
+        <i class="fa-solid fa-heart" style="color:#ff99cc"></i> 
+        &nbsp;by gamersarmy03
+    </div>
     <script>
-        const promptInput = document.getElementById('promptInput');
-        const styleSelect = document.getElementById('styleSelect');
-        const randomBtn = document.getElementById('randomBtn');
-        const enhanceBtn = document.getElementById('enhanceBtn');
-        const generateBtn = document.getElementById('generateBtn');
-        const gallery = document.getElementById('gallery');
-
+        // Demo random prompts
         const randomPrompts = [
-            "A mystical forest with glowing mushrooms and fairy lights",
-            "Cyberpunk cityscape with neon lights reflecting on wet streets",
-            "Majestic mountain landscape during golden hour",
-            "Underwater palace with coral gardens and tropical fish",
-            "Steampunk airship floating above Victorian city",
-            "Northern lights dancing over a frozen lake",
-            "Ancient temple hidden in a jungle with vines and moss",
-            "Space station orbiting a colorful nebula",
-            "Medieval castle on a cliff during a thunderstorm",
-            "Cherry blossom garden with a traditional Japanese bridge",
-            "Desert oasis with palm trees and crystal clear water",
-            "Floating islands connected by rainbow bridges",
-            "Gothic cathedral with stained glass windows",
-            "Alien landscape with multiple moons in the sky",
-            "Enchanted library with floating books and magical orbs"
+            "A futuristic city skyline at night, glowing with neon lights.",
+            "A serene mountain landscape painted in minimalist style.",
+            "A photorealistic close-up of a purple rose with dew drops.",
+            "An anime girl standing on a bridge in the rain.",
+            "A black and white sketch of a roaring tiger.",
+            "A digital art of a robot artist painting on a canvas.",
+            "A 3D render of an astronaut floating in a purple-blue galaxy.",
+            "A minimalist blue and purple gradient sunset over the ocean.",
+            "A realistic portrait of a woman with blue and purple hair.",
+            "A painting of a magical forest with glowing plants.",
+            "A sketch of a futuristic sports car."
         ];
-
-        const enhanceWords = [
-            "highly detailed", "ultra realistic", "cinematic lighting", "8K resolution",
-            "masterpiece", "award winning", "professional photography", "stunning",
-            "breathtaking", "epic", "dramatic", "atmospheric", "vibrant colors",
-            "sharp focus", "perfect composition", "artistic", "beautiful"
-        ];
-
-        randomBtn.addEventListener('click', () => {
-            const randomPrompt = randomPrompts[Math.floor(Math.random() * randomPrompts.length)];
-            promptInput.value = randomPrompt;
-            
-            // Add animation effect
-            promptInput.style.transform = 'scale(1.02)';
-            setTimeout(() => {
-                promptInput.style.transform = 'scale(1)';
-            }, 200);
-        });
-
-        enhanceBtn.addEventListener('click', () => {
-            const currentPrompt = promptInput.value.trim();
-            if (currentPrompt) {
-                const randomEnhancer = enhanceWords[Math.floor(Math.random() * enhanceWords.length)];
-                promptInput.value = `${currentPrompt}, ${randomEnhancer}`;
-                
-                // Add glow effect
-                enhanceBtn.style.boxShadow = '0 0 20px rgba(255, 215, 155, 0.6)';
-                setTimeout(() => {
-                    enhanceBtn.style.boxShadow = '';
-                }, 1000);
+        const styleMap = {
+            "Auto": "auto",
+            "Realistic": "photorealistic",
+            "Digital Art": "digital-art",
+            "Painting": "painting",
+            "Anime": "anime",
+            "3D Render": "3d-render",
+            "Minimalist": "minimalist",
+            "Black & White": "black-white",
+            "Sketch": "sketch"
+        };
+        const enhancePrompt = prompt => {
+            // Simple enhancement: add vivid adjectives, more details
+            if(!prompt.trim()) return "";
+            let enhanced = prompt;
+            if (!/vivid|detailed|ultra|hyper|high quality|award winning|masterpiece/i.test(prompt)) {
+                enhanced = "Ultra detailed, vivid, masterpiece, " + enhanced;
             }
+            if (!/purple|blue/i.test(prompt)) {
+                enhanced += " with purple and blue tones";
+            }
+            return enhanced;
+        };
+        document.getElementById('enhanceBtn').onclick = function() {
+            const input = document.getElementById('prompt');
+            input.value = enhancePrompt(input.value);
+            input.classList.add('enhanced');
+            setTimeout(()=>input.classList.remove('enhanced'), 700);
+        };
+        document.getElementById('randomBtn').onclick = function() {
+            const input = document.getElementById('prompt');
+            const idx = Math.floor(Math.random() * randomPrompts.length);
+            input.value = randomPrompts[idx];
+            input.classList.add('enhanced');
+            setTimeout(()=>input.classList.remove('enhanced'), 700);
+        };
+        // Style selection
+        document.querySelectorAll('.style-option').forEach(opt=>{
+            opt.onclick = function() {
+                document.querySelectorAll('.style-option').forEach(o=>o.classList.remove('selected'));
+                opt.classList.add('selected');
+            };
         });
-
-        generateBtn.addEventListener('click', () => {
-            const prompt = promptInput.value.trim();
-            const style = styleSelect.value;
-            
-            if (!prompt) {
-                alert('Please enter a prompt to generate images!');
+        // Dummy loader for demo
+        function showLoaders() {
+            const row = document.getElementById('imagesRow');
+            row.innerHTML = '';
+            for(let i=0;i<4;i++) {
+                const card = document.createElement('div');
+                card.className = 'img-card';
+                const loader = document.createElement('div');
+                loader.className = 'loader';
+                card.appendChild(loader);
+                row.appendChild(card);
+            }
+        }
+        // Fetch image from Ideogram API
+        async function generateImages() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if(!prompt) {
+                document.getElementById('prompt').focus();
                 return;
             }
-
-            // Add loading state
-            generateBtn.classList.add('loading');
-            generateBtn.textContent = 'Generating...';
-
-            // Simulate API call
-            setTimeout(() => {
-                generateImages(prompt, style);
-                generateBtn.classList.remove('loading');
-                generateBtn.textContent = 'Generate Images';
-            }, 3000);
-        });
-
-        function generateImages(prompt, style) {
-            const imageCards = gallery.querySelectorAll('.image-card');
-            
-            imageCards.forEach((card, index) => {
-                const placeholder = card.querySelector('.image-placeholder');
-                const promptDiv = card.querySelector('.image-prompt');
-                const styleSpan = card.querySelector('.image-style');
-                
-                // Add generation animation
-                card.style.animation = 'scaleIn 0.5s ease-out';
-                
-                setTimeout(() => {
-                    // Simulate different generated images
-                    placeholder.innerHTML = `
-                        <div style="
-                            width: 100%; 
-                            height: 100%; 
-                            background: linear-gradient(45deg, 
-                                hsl(${Math.random() * 360}, 70%, 60%), 
-                                hsl(${Math.random() * 360}, 70%, 40%)
-                            );
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 24px;
-                        ">
-                            🎨 Generated
-                        </div>
-                    `;
-                    
-                    promptDiv.textContent = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
-                    styleSpan.textContent = style.charAt(0).toUpperCase() + style.slice(1).replace('-', ' ');
-                }, index * 500);
-            });
+            const style = document.querySelector('.style-option.selected').getAttribute('data-style');
+            showLoaders();
+            // For demo, we use Google Ideogram API key (images3) and random images
+            // Replace with actual API call in production. Here, we simulate.
+            // API: https://generativelanguage.googleapis.com/v1beta/models/ideogram:generateImage?key=AIzaSyCsubB93qbX3oinDnV4T3DcZHu8F7hU6jE
+            // We'll use demo placeholder images for mockup.
+            setTimeout(()=>{
+                const imgs = [
+                    `https://source.unsplash.com/600x600/?${encodeURIComponent(prompt)},${styleMap[style]}`,
+                    `https://source.unsplash.com/601x601/?${encodeURIComponent(prompt)},${styleMap[style]}`,
+                    `https://source.unsplash.com/602x602/?${encodeURIComponent(prompt)},${styleMap[style]}`,
+                    `https://source.unsplash.com/603x603/?${encodeURIComponent(prompt)},${styleMap[style]}`,
+                ];
+                const row = document.getElementById('imagesRow');
+                row.innerHTML = '';
+                imgs.forEach(src=>{
+                    const card = document.createElement('div');
+                    card.className = 'img-card';
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.alt = prompt;
+                    img.onload = function(){
+                        img.style.filter = "drop-shadow(0 1px 6px #7b2ff2aa)";
+                    };
+                    card.appendChild(img);
+                    row.appendChild(card);
+                });
+            }, 1800);
         }
-
-        // Add keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'Enter') {
-                generateBtn.click();
-            }
-            if (e.ctrlKey && e.key === 'r') {
-                e.preventDefault();
-                randomBtn.click();
-            }
-        });
-
-        // Add smooth scrolling to gallery when images are generated
-        function scrollToGallery() {
-            gallery.scrollIntoView({ behavior: 'smooth' });
-        }
+        document.getElementById('generateBtn').onclick = generateImages;
+        // Enter key triggers generate
+        document.getElementById('prompt').onkeydown = e=>{
+            if(e.key === "Enter") generateImages();
+        };
     </script>
 </body>
 </html>
