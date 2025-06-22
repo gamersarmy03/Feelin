@@ -382,13 +382,11 @@
     <header>
         <div class="container navbar">
             <div class="logo">DreamWeaver</div>
-            <!-- Future Nav Links can go here -->
         </div>
     </header>
 
     <main class="container">
         <div class="generator-container">
-            <!-- Prompt Input Area -->
             <div class="prompt-area">
                 <input type="text" id="promptInput" class="prompt-input" placeholder="A synthwave sunset over a cyberpunk city...">
                 <div class="prompt-controls">
@@ -405,7 +403,6 @@
                 </div>
             </div>
 
-            <!-- Image Styles -->
             <div class="styles-container">
                 <p class="styles-label">Style:</p>
                 <div class="style-pills" id="stylePills">
@@ -421,16 +418,13 @@
                 </div>
             </div>
 
-            <!-- Generate Button -->
             <button id="generateBtn" class="generate-btn">
                 <span class="btn-text">Generate</span>
                 <i class="fa-solid fa-spinner fa-spin"></i>
             </button>
         </div>
 
-        <!-- Image Results Grid -->
         <div class="image-grid" id="imageGrid">
-            <!-- Generated images will be injected here by JavaScript -->
         </div>
     </main>
 
@@ -440,73 +434,73 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Element References ---
             const promptInput = document.getElementById('promptInput');
             const randomBtn = document.getElementById('randomBtn');
             const generateBtn = document.getElementById('generateBtn');
             const imageGrid = document.getElementById('imageGrid');
             const stylePillsContainer = document.getElementById('stylePills');
             
-            // --- Sample Data ---
             const samplePrompts = [
-                "A majestic lion with a glowing mane made of cosmic nebulae, realistic",
-                "Floating islands in a sky of cotton candy clouds, Ghibli anime style",
-                "A secret library hidden inside an ancient tree, enchanted, digital painting",
-                "A sleek, futuristic car racing through a neon-drenched Tokyo street at night, cyberpunk",
-                "A minimalist portrait of a woman made of swirling smoke, black and white",
-                "An astronaut sitting on the moon, fishing for stars, surreal 3D render",
-                "A detailed sketch of a steampunk mechanical heart",
-                "A tranquil Japanese garden with a koi pond under a cherry blossom tree, painting",
+                "majestic lion, cosmic nebulae, realistic",
+                "floating islands, cotton candy clouds, anime style",
+                "secret library, ancient tree, enchanted, digital painting",
+                "futuristic car, neon-drenched Tokyo, cyberpunk",
+                "minimalist portrait of a woman, swirling smoke, black and white",
+                "astronaut on the moon, fishing for stars, surreal 3D render",
+                "steampunk mechanical heart, detailed sketch",
+                "tranquil Japanese garden, koi pond, cherry blossom",
             ];
             
-            // --- Event Listeners ---
-            
-            // Random Prompt Button
             randomBtn.addEventListener('click', () => {
                 const randomIndex = Math.floor(Math.random() * samplePrompts.length);
                 promptInput.value = samplePrompts[randomIndex];
             });
 
-            // Style Pill Selection
             stylePillsContainer.addEventListener('click', (e) => {
                 if (e.target.classList.contains('style-pill')) {
-                    // Remove active class from all pills
-                    stylePillsContainer.querySelectorAll('.style-pill').forEach(pill => {
-                        pill.classList.remove('active');
-                    });
-                    // Add active class to the clicked pill
+                    stylePillsContainer.querySelectorAll('.style-pill').forEach(pill => pill.classList.remove('active'));
                     e.target.classList.add('active');
                 }
             });
 
-            // Generate Button
             generateBtn.addEventListener('click', generateImages);
 
-
-            // --- Core Function ---
             function generateImages() {
-                // 1. Show loading state
                 generateBtn.classList.add('loading');
                 generateBtn.disabled = true;
-                imageGrid.innerHTML = ''; // Clear previous images
+                imageGrid.innerHTML = '';
 
-                // 2. Simulate AI generation delay
                 setTimeout(() => {
-                    // 3. Generate 4 new images
+                    // --- START OF THE CODE CHANGE ---
+
+                    // 1. Get the text from the prompt input field
+                    const promptText = promptInput.value;
+                    const activeStyle = document.querySelector('.style-pill.active').innerText;
+
+                    // 2. Create keywords for the image search. Use the prompt and style.
+                    // If the prompt is empty, use a default term like "creative".
+                    let keywords = (promptText.trim() || 'creative concept') + ',' + activeStyle;
+                    // For the "Auto" style, we won't add it as a keyword.
+                    if (activeStyle === 'Auto' || activeStyle === 'Realistic') {
+                        keywords = promptText.trim() || 'creative concept';
+                    }
+                    
                     for (let i = 0; i < 4; i++) {
                         const imageCard = document.createElement('div');
                         imageCard.classList.add('image-card');
                         
-                        // NOTE: This uses a placeholder service. You would replace this URL
-                        // with the actual image URL returned from your AI model.
-                        // The 'AIza...' key you provided is a Google API Key, not an image.
-                        // The `random` query parameter ensures a new image each time.
-                        const imageUrl = `https://picsum.photos/500/500?random=${Date.now() + i}`;
+                        // 3. Construct a URL using the Unsplash service with our keywords.
+                        // This will fetch an image related to the prompt!
+                        // The `&${Date.now() + i}` part ensures we get a fresh image each time.
+                        const imageUrl = `https://source.unsplash.com/500x500/?${encodeURIComponent(keywords)}&${Date.now() + i}`;
+
+                        // --- THIS IS THE OLD CODE THAT WAS REPLACED ---
+                        // const oldImageUrl = `https://picsum.photos/500/500?random=${Date.now() + i}`;
+                        // --- END OF THE CODE CHANGE ---
 
                         imageCard.style.setProperty('--delay', `${i * 100}ms`);
-
                         imageCard.innerHTML = `
-                            <img src="${imageUrl}" alt="AI generated art">
+                            <img src="${imageUrl}" alt="${promptText}">
                             <div class="overlay">
                                 <div class="actions">
                                     <div class="action-btn" title="Download"><i class="fa-solid fa-download"></i></div>
@@ -518,16 +512,13 @@
                         imageGrid.appendChild(imageCard);
                     }
 
-                    // 4. Reset button state
                     generateBtn.classList.remove('loading');
                     generateBtn.disabled = false;
-                }, 2500); // 2.5 second delay
+                }, 2500);
             }
 
-            // --- Initial Load ---
-            // Generate some images on page load to make it look alive
+            // Initial load
             generateImages();
-
         });
     </script>
 
