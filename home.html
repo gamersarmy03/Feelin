@@ -1,515 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DreamWeaver - AI Image Generation</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        /* --- General Setup & Theme --- */
-        :root {
-            --gradient-start: #6a11cb;
-            --gradient-end: #2575fc;
-            --primary-text: #ffffff;
-            --secondary-text: #e0e0e0;
-            --accent-color: #a259ff;
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --shadow-light: rgba(0, 0, 0, 0.1);
-            --shadow-dark: rgba(0, 0, 0, 0.3);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            color: var(--primary-text);
-            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-            background-attachment: fixed;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            padding: 2rem 1rem;
-        }
-        
-        /* --- Main Container & Glassmorphism --- */
-        .main-container {
-            width: 100%;
-            max-width: 1200px;
-            padding: 2rem;
-            background: var(--glass-bg);
-            border-radius: 20px;
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            box-shadow: 0 8px 32px 0 var(--shadow-dark);
-            animation: fadeInContainer 1s ease-out forwards;
-        }
-
-        @keyframes fadeInContainer {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- Header --- */
-        header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-shadow: 0 2px 8px var(--shadow-dark);
-        }
-
-        header p {
-            font-size: 1.1rem;
-            color: var(--secondary-text);
-            margin-top: 0.5rem;
-        }
-
-        /* --- Generator UI --- */
-        .generator-ui {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        /* --- Prompt Section --- */
-        .prompt-section textarea {
-            width: 100%;
-            min-height: 120px;
-            padding: 1rem;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1rem;
-            color: var(--primary-text);
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            resize: vertical;
-            transition: all 0.3s ease;
-        }
-
-        .prompt-section textarea:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 15px rgba(162, 89, 255, 0.5);
-        }
-
-        .prompt-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        
-        .control-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.2rem;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            color: var(--primary-text);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: var(--accent-color);
-        }
-        
-        .control-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-        }
-
-        /* Enhance Prompt Toggle Switch */
-        .enhance-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
-            color: var(--secondary-text);
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
-
-        .switch input { display: none; }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0,0,0,0.3);
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px; width: 18px;
-            left: 3px; bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider { background-color: var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        /* --- Style Section --- */
-        .style-section h2 {
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .style-selector {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.75rem;
-        }
-
-        .style-btn {
-            padding: 0.6rem 1.2rem;
-            background: transparent;
-            border: 1px solid var(--glass-border);
-            color: var(--secondary-text);
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .style-btn:hover {
-            background: var(--glass-bg);
-            color: var(--primary-text);
-            border-color: var(--primary-text);
-        }
-
-        .style-btn.active {
-            background: var(--primary-text);
-            color: var(--gradient-start);
-            border-color: var(--primary-text);
-            font-weight: 600;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        /* --- CTA Button --- */
-        .cta-button {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--primary-text);
-            background: linear-gradient(135deg, var(--accent-color), #2575fc);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px var(--shadow-dark);
-        }
-
-        .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px var(--shadow-dark);
-        }
-        
-        .cta-button:active {
-            transform: translateY(-1px);
-        }
-
-        /* --- Results Section --- */
-        .results-section {
-            margin-top: 1rem;
-            min-height: 200px;
-        }
-        
-        .results-section .placeholder-text {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-            color: var(--secondary-text);
-            border: 2px dashed var(--glass-border);
-            border-radius: 10px;
-        }
-
-        .image-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
-
-        .image-card {
-            position: relative;
-            background: var(--glass-bg);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid var(--glass-border);
-            opacity: 0;
-            transform: scale(0.9);
-            animation: popIn 0.5s ease-out forwards;
-        }
-        
-        .image-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.3s ease;
-        }
-        
-        .image-card:hover img {
-            transform: scale(1.05);
-        }
-
-        @keyframes popIn {
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        
-        /* --- Loader --- */
-        .loader {
-            margin: 4rem auto;
-            border: 5px solid var(--glass-bg);
-            border-top: 5px solid var(--primary-text);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* --- Footer --- */
-        footer {
-            text-align: center;
-            margin-top: 3rem;
-            color: var(--secondary-text);
-            opacity: 0.8;
-            font-size: 0.9rem;
-        }
-
-        /* --- Responsive Design --- */
-        @media (min-width: 768px) {
-            .image-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            .main-container {
-                padding: 3rem;
-            }
-        }
-        
-        @media (max-width: 767px) {
-            body {
-                padding: 1rem 0.5rem;
-            }
-            .main-container {
-                padding: 1.5rem;
-            }
-            header h1 {
-                font-size: 2.2rem;
-            }
-            .prompt-controls {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .image-grid {
-                grid-template-columns: repeat(1, 1fr);
-            }
-            .style-selector {
-                gap: 0.5rem;
-            }
-            .style-btn {
-                padding: 0.5rem 1rem;
-                font-size: 0.8rem;
-            }
-        }
-
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DreamWeaver</title>
+  <style>
+    /* Gradient background */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #6a0dad, #0000ff);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: bgShift 15s ease infinite;
+    }
+    @keyframes bgShift {
+      0% { background: linear-gradient(135deg, #6a0dad, #0000ff); }
+      50% { background: linear-gradient(135deg, #0000ff, #6a0dad); }
+      100% { background: linear-gradient(135deg, #6a0dad, #0000ff); }
+    }
+    header { padding: 1em; text-align: center; }
+    .prompt-bar { width: 90%; max-width: 600px; display: flex; gap:8px; margin-bottom: 1em; }
+    .prompt-bar input, .prompt-bar select, .prompt-bar button {
+      flex: 1;
+      padding: 0.5em;
+      border: none;
+      border-radius: 0.3em;
+      font-size: 1em;
+    }
+    .prompt-bar input { background: #fff; color: #333; }
+    .prompt-bar select { max-width: 150px; }
+    .prompt-bar button { background: #fff; color: #333; cursor: pointer; transition: transform .2s; }
+    .prompt-bar button:hover { transform: scale(1.05); }
+    .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; width: 90%; max-width: 1000px; }
+    .images img {
+      width: 100%; border: 2px solid #fff; border-radius: 8px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width:768px) {
+      .prompt-bar { flex-direction: column; }
+      .prompt-bar select, .prompt-bar button { width: 100%; }
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>🎨 DreamWeaver</h1>
+    <p>Text → Image generator with styles, Enhance & Random prompt</p>
+  </header>
 
-    <div class="main-container">
-        <header>
-            <h1>DreamWeaver</h1>
-            <p>Turn your imagination into stunning visuals, instantly.</p>
-        </header>
+  <div class="prompt-bar">
+    <input id="promptInput" type="text" placeholder="Enter your prompt…" />
+    <select id="styleSelect">
+      <option value="auto">Auto</option>
+      <option value="realistic">Realistic</option>
+      <option value="digital art">Digital Art</option>
+      <option value="painting">Painting</option>
+      <option value="anime">Anime</option>
+      <option value="3d render">3D Render</option>
+      <option value="minimalist">Minimalist</option>
+      <option value="black&white">Black & White</option>
+      <option value="sketch">Sketch</option>
+    </select>
+    <button id="enhanceBtn">Enhance</button>
+    <button id="randomBtn">🎲 Random</button>
+    <button id="generateBtn">Generate</button>
+  </div>
 
-        <main class="generator-ui">
-            <div class="prompt-section">
-                <textarea id="prompt-input" placeholder="A synthwave sunset over a cyberpunk city, vibrant pink and blue neon lights, hyperrealistic, 8k"></textarea>
-                <div class="prompt-controls">
-                    <div class="enhance-toggle">
-                        <label class="switch">
-                            <input type="checkbox" id="enhance-prompt-checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="enhance-prompt-checkbox">Enhance Prompt</label>
-                    </div>
-                    <button id="random-prompt-btn" class="control-btn">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.16v5.33c0 2.2-1.8 4-4 4H7c-2.2 0-4-1.8-4-4V7.49c0-2.2 1.8-4 4-4h5.33m4.23 8.3L15.42 20.5c-.3.3-.78.3-1.09 0l-1.12-1.12a.999.999 0 0 1 0-1.41l5.52-5.52a.999.999 0 0 1 1.41 0l1.12 1.12c.31.3.31.78 0 1.09zM18.01 3.51l-8.43 8.43c-.2.2-.38.45-.49.73l-1.06 2.65c-.13.32-.01.69.25.95s.63.38.95.25l2.65-1.06c.28-.11.53-.29.73-.49l8.43-8.43c.89-.89.89-2.33 0-3.22l-1.12-1.12c-.89-.89-2.33-.89-3.22 0zM17 2.49l2.12 2.12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Random
-                    </button>
-                </div>
-            </div>
+  <div class="images">
+    <img id="img1" src="" alt="">
+    <img id="img2" src="" alt="">
+    <img id="img3" src="https://image-generator.example.com/AIzaSyCsubB93qbX3oinDnV4T3DcZHu8F7hU6jE/3" alt="">
+    <img id="img4" src="" alt="">
+  </div>
 
-            <div class="style-section">
-                <h2>Choose a Style</h2>
-                <div class="style-selector" id="style-selector">
-                    <button class="style-btn active" data-style="Auto">Auto</button>
-                    <button class="style-btn" data-style="Realistic">Realistic</button>
-                    <button class="style-btn" data-style="Digital Art">Digital Art</button>
-                    <button class="style-btn" data-style="Painting">Painting</button>
-                    <button class="style-btn" data-style="Anime">Anime</button>
-                    <button class="style-btn" data-style="3D Render">3D Render</button>
-                    <button class="style-btn" data-style="Minimalist">Minimalist</button>
-                    <button class="style-btn" data-style="Black & White">Black & White</button>
-                    <button class="style-btn" data-style="Sketch">Sketch</button>
-                </div>
-            </div>
+  <script>
+    const rndPrompts = [
+      'Futuristic purple city at dusk',
+      'Anime forest under moonlight',
+      '3D render of abstract shapes',
+      'Minimalist white butterfly on blue',
+      'Black & white sketch of mountains',
+      'Digital art portrait in neon light'
+    ];
 
-            <button id="generate-btn" class="cta-button">Generate</button>
+    const input = document.getElementById('promptInput');
+    const styleSelect = document.getElementById('styleSelect');
+    const imgs = [1,2,3,4].map(n=>document.getElementById('img'+n));
 
-            <div class="results-section" id="results-section">
-                <div class="placeholder-text">Your generated images will appear here</div>
-            </div>
-        </main>
-        
-        <footer>
-            <p>© 2024 DreamWeaver. All Rights Reserved.</p>
-        </footer>
-    </div>
+    document.getElementById('randomBtn').addEventListener('click', () => {
+      input.value = rndPrompts[Math.floor(Math.random()*rndPrompts.length)];
+    });
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const promptInput = document.getElementById('prompt-input');
-            const randomPromptBtn = document.getElementById('random-prompt-btn');
-            const styleSelector = document.getElementById('style-selector');
-            const generateBtn = document.getElementById('generate-btn');
-            const resultsSection = document.getElementById('results-section');
+    document.getElementById('enhanceBtn').addEventListener('click', () => {
+      // Example: append some Magic Prompt-like enhancement
+      input.value += ', ultra detailed, high contrast, epic composition';
+    });
 
-            // --- Array of Random Prompts ---
-            const randomPrompts = [
-                "A majestic fox with glowing blue eyes in an enchanted forest at midnight, digital art.",
-                "A futuristic city with flying cars and holographic ads, seen from a high-rise balcony, realistic.",
-                "An astronaut meditating on a floating island in a nebula, surrounded by cosmic dust, painting.",
-                "A serene Japanese zen garden with a cherry blossom tree and a koi pond, anime style.",
-                "A cute, fluffy robot companion serving tea in a cozy, sunlit room, 3D render.",
-                "A minimalist abstract representation of 'courage', using only three colors.",
-                "A portrait of an old sailor with a weathered face, looking out at a stormy sea, black & white photography.",
-                "A detailed sketch of a vintage steam-powered motorcycle.",
-                "A crystal cave with bioluminescent fungi casting an ethereal glow on giant gems.",
-                "A library of floating books in a wizard's tower, fantasy painting.",
-                "A cat wearing a tiny crown and royal cape, sitting on a throne, photorealistic."
-            ];
-
-            // --- Event Listener for Random Prompt Button ---
-            randomPromptBtn.addEventListener('click', () => {
-                const randomIndex = Math.floor(Math.random() * randomPrompts.length);
-                promptInput.value = randomPrompts[randomIndex];
-                promptInput.style.height = 'auto';
-                promptInput.style.height = (promptInput.scrollHeight) + 'px';
-            });
-
-            // --- Event Listener for Style Selection ---
-            styleSelector.addEventListener('click', (e) => {
-                if (e.target.classList.contains('style-btn')) {
-                    // Remove 'active' class from all buttons
-                    styleSelector.querySelectorAll('.style-btn').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    // Add 'active' class to the clicked button
-                    e.target.classList.add('active');
-                }
-            });
-
-            // --- Event Listener for Generate Button ---
-            generateBtn.addEventListener('click', () => {
-                const prompt = promptInput.value;
-                const activeStyle = document.querySelector('.style-btn.active').dataset.style;
-                const isEnhanced = document.getElementById('enhance-prompt-checkbox').checked;
-
-                if (!prompt.trim()) {
-                    alert("Please enter a prompt to generate images.");
-                    return;
-                }
-                
-                // Log captured data to console to show it's working
-                console.log("--- Generating Image ---");
-                console.log("Prompt:", prompt);
-                console.log("Style:", activeStyle);
-                console.log("Enhanced:", isEnhanced);
-
-                generateImages();
-            });
-
-            // --- Image Generation Simulation Function ---
-            function generateImages() {
-                // 1. Show loader and clear previous results
-                resultsSection.innerHTML = '<div class="loader"></div>';
-
-                // 2. Simulate API call delay (2.5 seconds)
-                setTimeout(() => {
-                    // 3. Clear loader and prepare grid
-                    resultsSection.innerHTML = '';
-                    const grid = document.createElement('div');
-                    grid.className = 'image-grid';
-                    resultsSection.appendChild(grid);
-                    
-                    // 4. Generate 4 images
-                    for (let i = 0; i < 4; i++) {
-                        const imageCard = document.createElement('div');
-                        imageCard.className = 'image-card';
-                        
-                        const img = document.createElement('img');
-                        // Use a random query parameter to prevent browser caching and get new images
-                        img.src = `https://picsum.photos/512/512?random=${Math.random()}`;
-                        img.alt = 'AI generated image';
-                        
-                        // Add a staggered animation delay for a cooler effect
-                        imageCard.style.animationDelay = `${i * 0.15}s`;
-
-                        imageCard.appendChild(img);
-                        grid.appendChild(imageCard);
-                    }
-                }, 2500);
-            }
-        });
-    </script>
-
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      const prompt = input.value;
+      const style = styleSelect.value;
+      // Fake API call: in real use, fetch your endpoint
+      for (let i=0;i<4;i++){
+        imgs[i].src = `https://image-generator.example.com/AIzaSyCsubB93qbX3oinDnV4T3DcZHu8F7hU6jE/${i+1}?prompt=${encodeURIComponent(prompt)}&style=${encodeURIComponent(style)}`;
+      }
+    });
+  </script>
 </body>
 </html>
